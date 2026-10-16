@@ -18,9 +18,11 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
 
     private static final String LOGIN_PATH = "/login";
     private final LoginFailureTracker tracker;
+    private final org.springframework.core.env.Environment environment;
 
-    public LoginRateLimitFilter(LoginFailureTracker tracker) {
+    public LoginRateLimitFilter(LoginFailureTracker tracker, org.springframework.core.env.Environment environment) {
         this.tracker = tracker;
+        this.environment = environment;
     }
 
     @Override
@@ -33,7 +35,8 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String username = request.getParameter("username");
-        String key = key(request.getRemoteAddr(), username);
+        String clientAddress = clientAddress(request);
+        String key = key(clientAddress, username);
         if (tracker.isBlocked(key)) {
             response.setHeader("Retry-After", Long.toString(tracker.retryAfterSeconds(key)));
             response.sendError(429,
@@ -43,18 +46,40 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
+    public void failed(HttpServletRequest request, String username) {
+        tracker.registerFailure(key(clientAddress(request), username));
+    }
+
+    public void succeeded(HttpServletRequest request, String username) {
+        tracker.reset(key(clientAddress(request), username));
+    }
+
+    public boolean isBlocked(HttpServletRequest request, String username) {
+        return tracker.isBlocked(key(clientAddress(request), username));
+    }
+
+    public long retryAfterSeconds(HttpServletRequest request, String username) {
+        return tracker.retryAfterSeconds(key(clientAddress(request), username));
+    }
+
+    private String clientAddress(HttpServletRequest request) {
+        // X-Forwarded-For è fidato solo dietro un proxy esplicitamente configurato.
+        // Fuori da tale scenario un client potrebbe falsificarlo e ruotare i bucket.
+        boolean trustedProxy = environment.getProperty("dailyplanet.security.trust-forwarded-headers",
+                Boolean.class, false);
+        if (trustedProxy) {
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                return forwarded.split(",", 2)[0].trim();
+            }
+        }
+        return request.getRemoteAddr();
+    }
+
     static String key(String remoteAddress, String username) {
         String user = username == null ? "" : username.trim().toLowerCase(Locale.ROOT);
         return (remoteAddress == null ? "unknown" : remoteAddress) + "|" + user;
     }
 
 
-    /** Se l'autenticazione fallisce, l'AuthenticationFailureHandler registra solo la chiave. */
-    public void failed(String remoteAddress, String username) {
-        tracker.registerFailure(key(remoteAddress, username));
-    }
-
-    public void succeeded(String remoteAddress, String username) {
-        tracker.reset(key(remoteAddress, username));
-    }
 }

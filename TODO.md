@@ -220,6 +220,7 @@ Viste/frammenti da creare (da `return "..."`
 Piano iniziale chiuso. Richiesta nuova del proprietario (2026-10-16): **"implementa cybersecurity"**. Avvio S10 con gate esplicito e deliverable qui sotto.
 
 ## S10 — Hardening cybersecurity (richiesto dopo v1.0.0)
+- **Variabile di questa iterazione**: hardening web/app + usabilità form; baseline osservata prima delle modifiche; nessun push/tag.
 
 ### Gate di lavoro
 - **Obiettivo**: ridurre vulnerabilità concrete nelle superfici HTTP/sessioni/account, documentare le misure e provare i controlli con test negativi.
@@ -236,10 +237,10 @@ Piano iniziale chiuso. Richiesta nuova del proprietario (2026-10-16): **"impleme
 - [x] S10.3 Commenti: form GET/POST verifica domanda associata e autore o ROLE_ADMIN; commento/risposta non bindati direttamente a entità per le nuove rotte; regressione IDOR.
 - [x] S10.4 Header: CSP `script-src 'self'`, no inline JS; `nosniff`, `DENY`, referrer policy, HSTS (HTTPS), `Cache-Control: no-store`; script esterno `/js/app.js`; tolto inline CSS dai template; SecurityHeadersTest.
 - [x] S10.5 Login rate limiting: 8 errori / 15 min → 429 + Retry-After per coppia IP+username, cooldown 15 min, bucket normalizzati, reset al successo, massimo 10.000 entry; LoginFailureTrackerTest + LoginRateLimitTest; dummy BCrypt per account inesistente/disabilitato.
-- [x] S10.6 Security regressions + `docs/security.md`: threat model, limiti, setup deploy, 59+ test aggiornati; niente body/headers nei log.
+- [x] S10.6 Security regressions + `docs/security.md`: threat model, limiti, setup deploy, 75 test aggiornati; request logging redatto (niente body/header/query/client info/session ID).
 - **Stato**: IMPLEMENTAZIONE + TEST + smoke locale COMPLETATI; non ancora pubblicato.
 - **Evidenza**: `./gradlew clean build` → BUILD SUCCESSFUL; `./gradlew clean test` → **75 test, 0 failure** (S10 aggiunge 16 regressioni: FormFlow 4, SecurityRegression 5, SecurityHeaders 2, LoginRateLimit 1, LoginFailureTracker 4); smoke jar reale: `/login` 200, POST login 302 `/user`, `/js/app.js` 200, header effettivi `nosniff`, `DENY`, Referrer-Policy, CSP `script-src 'self'; style-src 'self'`, Cache-Control `no-store`; rate-limit test invia 8 login errati e osserva 429 + `Retry-After`; SecurityRegressionTest prova IDOR/ruolo/disabled/comment ownership.
 - **Hardening confermato**: self-update usa ID in session/database e aggiorna solo nome/cognome/email; il form profilo rende username `readonly`; il cambio password self-service vincola l'username autenticato; reset password admin usa ID target server-side (il form non invia username); POST commento/resposta modifica verifica ownership oppure `ROLE_ADMIN`; session fixation `changeSessionId`, massimo 2 sessioni, logout invalida cookie; `Cache-Control: no-store`; script esterno senza inline JS; CSP senza `unsafe-inline` per script né stili; headers testati.
 - **Rate limit**: 8 fallimenti per coppia IP+username in 15 minuti → cooldown 15 minuti; success reset; mappa bounded 10.000 entry; username inesistente/disabilitato usa dummy BCrypt; nessuna password/token nel log.
-- **Limiti noti**: limiter in-memory per singola istanza, non condiviso in multi-replica; IP usa `remoteAddr` (non si fida di `X-Forwarded-For` client; dietro proxy verificare forwarding fidato); HSTS presuppone TLS HTTPS. Nessun pen test esterno; niente claim di certificazione/compliance.
+- **Limiti noti**: limiter in-memory per singola istanza, non condiviso in multi-replica; usa `remoteAddr` per default. `X-Forwarded-For` viene letto solo con `TRUST_FORWARDED_HEADERS=true` (abilitare esclusivamente dietro reverse proxy fidato che sovrascrive l'header); HSTS presuppone HTTPS. Nessun pen test esterno; niente claim di certificazione/compliance.
 - **Gate deploy**: patch S10 non ancora pubblicata; `v1.0.0` resta immutabile. Prima della patch release: CI 3 OS + build multiarch e push fast-forward; nuova tag `v1.0.1` solo dopo tutti i gate.

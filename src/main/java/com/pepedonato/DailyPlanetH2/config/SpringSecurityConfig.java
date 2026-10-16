@@ -30,11 +30,11 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 public class SpringSecurityConfig {
 
     private final AccessDeniedHandler accessDeniedHandler;
-    private final LoginFailureTracker loginFailureTracker;
+    private final LoginRateLimitFilter loginRateLimitFilter;
 
-    public SpringSecurityConfig(AccessDeniedHandler accessDeniedHandler, LoginFailureTracker loginFailureTracker) {
+    public SpringSecurityConfig(AccessDeniedHandler accessDeniedHandler, LoginRateLimitFilter loginRateLimitFilter) {
         this.accessDeniedHandler = accessDeniedHandler;
-        this.loginFailureTracker = loginFailureTracker;
+        this.loginRateLimitFilter = loginRateLimitFilter;
     }
 
     @Bean
@@ -88,7 +88,7 @@ public class SpringSecurityConfig {
     private AuthenticationSuccessHandler loginSuccessHandler() {
         return (request, response, authentication) -> {
             String username = authentication.getName();
-            loginFailureTracker.reset(LoginRateLimitFilter.key(request.getRemoteAddr(), username));
+            loginRateLimitFilter.succeeded(request, username);
             response.sendRedirect(request.getContextPath() + "/user");
         };
     }
@@ -96,12 +96,10 @@ public class SpringSecurityConfig {
     private AuthenticationFailureHandler loginFailureHandler() {
         return (request, response, exception) -> {
             String username = request.getParameter("username");
-            String key = LoginRateLimitFilter.key(request.getRemoteAddr(), username);
-            // Un solo incremento per fallimento: questo handler è il punto di registrazione.
-            loginFailureTracker.registerFailure(key);
-            if (loginFailureTracker.isBlocked(key)) {
+            loginRateLimitFilter.failed(request, username);
+            if (loginRateLimitFilter.isBlocked(request, username)) {
                 response.setStatus(429);
-                response.setHeader("Retry-After", Long.toString(loginFailureTracker.retryAfterSeconds(key)));
+                response.setHeader("Retry-After", Long.toString(loginRateLimitFilter.retryAfterSeconds(request, username)));
                 request.getRequestDispatcher("/login?error=rate-limit").forward(request, response);
             } else {
                 response.sendRedirect(request.getContextPath() + "/login?error");

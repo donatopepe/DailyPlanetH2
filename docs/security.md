@@ -78,15 +78,17 @@ exploit in a public issue.
 2. Terminate TLS at a trusted reverse proxy; restrict access to the app and PostgreSQL ports.
 3. If proxy headers are enabled (`forward-headers-strategy: framework`), configure the app
    behind a trusted proxy that overwrites, rather than appends untrusted, forwarding headers.
-4. Rotate any credential that was ever used outside local development. The historic seed
+4. The login limiter reads `remoteAddr` by default. Set `TRUST_FORWARDED_HEADERS=true` only
+   when the app is reachable exclusively through a trusted reverse proxy that overwrites
+   `X-Forwarded-For`; never expose the app directly with this option enabled.
+5. Rotate any credential that was ever used outside local development. The historic seed
    credential was removed from local git history and the public `main` branch, but the old
    commit remains fetchable by SHA until GitHub Support garbage-collects dangling objects;
    see [`github-history-purge.md`](github-history-purge.md). Treat it as compromised.
-5. Use one app instance for the in-memory login limiter. For multiple replicas, move the
+6. Use one app instance for the in-memory login limiter. For multiple replicas, move the
    rate-limit state to a shared store (for example Redis) or enforce a stricter limit at the
-   trusted proxy/WAF. Never trust a client-supplied `X-Forwarded-For` unless a trusted proxy
-   sanitises it.
-6. Keep Java base images, PostgreSQL, Gradle plugins and dependencies current; review CI
+   trusted proxy/WAF.
+7. Keep Java base images, PostgreSQL, Gradle plugins and dependencies current; review CI
    dependency alerts before a production deployment.
 
 ## Verification

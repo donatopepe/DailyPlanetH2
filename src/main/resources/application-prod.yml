@@ -21,6 +21,12 @@ spring:
 server:
   forward-headers-strategy: framework
 
+dailyplanet:
+  security:
+    # Abilitare solo se tutte le richieste arrivano da un reverse proxy controllato che
+    # sovrascrive X-Forwarded-For; altrimenti l'IP viene dal socket remoto.
+    trust-forwarded-headers: ${TRUST_FORWARDED_HEADERS:false}
+
 logging:
   level:
     root: INFO

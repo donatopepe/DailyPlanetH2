@@ -2,7 +2,6 @@ package com.pepedonato.DailyPlanetH2.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 
 /**
@@ -13,17 +12,18 @@ import org.springframework.web.filter.CommonsRequestLoggingFilter;
 public class SecurityHeadersConfig {
 
     /**
-     * Registra solo metodo, URI e IP remoto: non includere body/header/query perché possono
-     * contenere password, token CSRF, cookie di sessione o dati personali.
+     * Il filtro resta attivo ma non emette request, body, query, header o session ID.
+     * Le righe di request contengono spesso dati personali e possono facilitare
+     * l'enumerazione; l'audit applicativo registra solo esiti aggregati e errori tecnici.
      */
     @Bean
     public CommonsRequestLoggingFilter requestLoggingFilter() {
         CommonsRequestLoggingFilter filter = new CommonsRequestLoggingFilter();
-        filter.setIncludeClientInfo(true);
+        filter.setIncludeClientInfo(false);
         filter.setIncludeQueryString(false);
         filter.setIncludePayload(false);
         filter.setIncludeHeaders(false);
-        filter.setAfterMessagePrefix("HTTP request: ");
+        filter.setAfterMessagePrefix("HTTP request suppressed: ");
         return filter;
     }
 }
