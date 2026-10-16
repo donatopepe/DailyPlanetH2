@@ -43,10 +43,8 @@ public class Categoria implements Serializable {
     public void addDomanda(DomandaLavoro domanda) {
         if (domande == null) {
             domande = new ArrayList();
-            System.out.println("Istanzio lista somande in categoria perchè non instanziata");
         }
         if (!domande.contains(domanda)){
-            System.out.println("Addizziono domanda che non esiste in lista della categoria");
             domande.add(domanda);
         }
         

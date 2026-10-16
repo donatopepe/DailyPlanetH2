@@ -85,17 +85,13 @@ public class DomandaServiceImpl {
 
         if ((domandaLavoro.getId() != null) && domandaLavoroRepository.existsById(domandaLavoro.getId())) {
             domandaLavoro.setDatamodificaNow();
-            System.out.println("domanda già esiste modifico");
             domandaLavoro.setCategorie(categoriaServiceImpl.saveCategorie(categorie, domandaLavoro));
 
         } else {
             domandaLavoro.setDatacreazioneNow();
-            System.out.println("Domanda non esiste ne creo una nuova");
             domandaLavoro.setCategorie(categoriaServiceImpl.saveCategorie(categorie, null));
         }
-        System.out.println("salvo domanda");
         DomandaLavoro save = domandaLavoroRepository.save(domandaLavoro);
-        System.out.println("aggiorno categoria con domanda salvata");
         domandaLavoro.setCategorie(categoriaServiceImpl.saveCategorie(categorie, save));
 
         return save != null;

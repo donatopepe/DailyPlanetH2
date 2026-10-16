@@ -132,10 +132,13 @@ Viste/frammenti da creare (da `return "..."`
 - **Blocker**: nessuno.
 
 ### S5 — Pulizia dominio/servizi (dipende da S2) → C7
-- [ ] S5.1 Rimuovere tutti i 137 `System.out.println`, introdurre SLF4J senza dati sensibili.
-- [ ] S5.2 Eliminare lo stato statico di `ChangePwForm` (istanza per richiesta).
-- [ ] S5.3 Gestione errori centralizzata (`@ControllerAdvice`) e messaggi in italiano coerenti.
-- **AC**: `grep -rn "System.out" src/` vuoto; test unit servizi verdi.
+- [x] S5.1 Rimuovere tutti i `System.out.println` e usare SLF4J senza dati sensibili.
+- [x] S5.2 Eliminare lo stato condiviso nei controller (i campi di istanza `allCategorie`/`allUser` mutati per richiesta sono ora variabili locali + helper `categorieDisponibili()`); logger del `UserController` corretto (era `CommandLineRunnerBean.class`).
+- [x] S5.3 Gestione errori centralizzata (`@ControllerAdvice` → `GlobalExceptionHandler`) e messaggi in italiano coerenti.
+- **Stato**: COMPLETATO (2026-10-16).
+- **Evidenza**: `grep -rn "System.out\|System.err\|printStackTrace" src/main` → **zero** (rimosse 101 righe di stampa + 4 commenti con stampe; restano solo i `log` SLF4J); `grep -n "allCategorie = new\|allUser = new"` → nessun campo condiviso; `./gradlew clean test` → BUILD SUCCESSFUL, tests=26 failures=0 errors=0; `GlobalExceptionHandler` con `@ExceptionHandler` per `NoSuchElementException`/`IllegalArgumentException` (404), `DataIntegrityViolationException` (409) e fallback 500, tutti registrati su log e mostrati in `error/error`.
+- **Nota**: `MyUserDetailsService` aveva già logging SLF4J senza password da S3.
+- **Blocker**: nessuno.
 
 ### S6 — Suite di test completa (dipende da S3, S4, S5) → C8
 - [ ] S6.1 Unit: `CategoriaServiceImpl`, `CommentoServiceImpl`, `DomandaServiceImpl`, `MyUserDetailsService`.
@@ -183,4 +186,4 @@ Viste/frammenti da creare (da `return "..."`
 - (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 13/13, test verdi, nessun segreto).
 
 ## Prossimo passo immediato
-S5.1 → S5.3 (pulizia dominio/servizi: rimozione dei 105 `System.out`, stato statico di `ChangePwForm`, gestione errori centralizzata, semantica di `/user/listcommenti/{id}`).
+S6.1 → S6.6 (suite di test completa: unit servizi, `@DataJpaTest`, matrice rotte × ruoli, E2E login→domanda→commento→logout, report).

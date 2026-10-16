@@ -64,20 +64,16 @@ public class CategoriaServiceImpl {
         Categoria findByNome = findByNome(categoria.getNome());
         Categoria save;
         if (findByNome == null) {
-            System.out.println("Categoria nuova aggiungo domanda e salvo in tabella");
             categoria.addDomanda(domanda);
             save = categoriaRepository.save(categoria);
 
         } else {
-            System.out.println("Categoria già presente quindi aggiungo domanda attuale " + categoria.getNome());
             findByNome.addDomanda(domanda);
             save = categoriaRepository.save(findByNome);
         }
         if (save == null) {
 
-            System.out.println("Salvataggio non riuscito in tabella categoria: " + categoria.getNome());
         } else {
-            System.out.println("Salvata in tabella categoria: " + categoria.getNome());
         }
         return save;
 
@@ -87,11 +83,9 @@ public class CategoriaServiceImpl {
         Boolean success = true;
 
         for (Categoria categoria2:categoriaRepository.findByDomandeOrderByNomeAsc(domanda)){
-            System.out.println("Rimuovo categoria " + categoria2.getNome());
             categoria2.removeDomanda(domanda);
             
             if (categoriaRepository.save(categoria2)!=null) {
-                System.out.println("ok aggiornamento categoria");
             }
         }
 

@@ -10,12 +10,10 @@ public class DailyPlanetApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(DailyPlanetApplication.class, args);
-        System.out.println("SpringApplication.run");
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void doSomethingAfterStartup() {
-        System.out.println("doSomethingAfterStartup");
     }
 
 }
