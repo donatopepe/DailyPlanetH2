@@ -65,22 +65,18 @@ public class AdminController {
 
         model.addAttribute("user", user);
         if (userDetailsService.existsUserByUsername(user.getUsername())) {
-            System.out.println("username already present");
             model.addAttribute("alert", "Username already present");
             return "newaccountDo :: results";
         } else {
             if (bindingResult.hasErrors()) {
-                System.out.println("bindind ha errori");
                 model.addAttribute("alert", "Error Binding");
                 return "newaccountDo :: results";
             } else {
                 Boolean save = userDetailsService.save(user);
 
                 if (save) {
-                    System.out.println("Ok account salvato");
                     model.addAttribute("alert", "Account Saved");
                 } else {
-                    System.out.println("Account non salvato");
                     model.addAttribute("alert", "Account not Saved");
                 }
             }
@@ -99,7 +95,6 @@ public class AdminController {
         mav.addObject("ChangePwForm", changePwForm);
 
         mav.setViewName("adminchangepw");
-        System.out.println("Lancio id:" + user.getId());
 
         return mav;
 
@@ -119,7 +114,6 @@ public class AdminController {
             userNoPW.setUserrole(user.getUserrole());
             userNoPW.setDisabled(user.getDisabled());
 
-            System.out.println("Lancio id:" + user.getId());
             model.addAttribute("userNoPW", userNoPW);
 
             return "editaccount";
@@ -134,10 +128,8 @@ public class AdminController {
             @ModelAttribute ChangePwForm ChangePwForm, BindingResult bindingResult, Model model, ModelAndView mav) {
 
         mav.addObject("ChangePwForm", ChangePwForm);
-        System.out.println("username:" + ChangePwForm.getUsername());
 
         if (bindingResult.hasErrors()) {
-            System.out.println("bindind ha errori");
             model.addAttribute("alert", "Error Binding");
 
             return "adminchangepwDo :: resultschangepw";
@@ -146,11 +138,9 @@ public class AdminController {
             Boolean save = userDetailsService.AdminChangePassword(ChangePwForm.getUsername(), ChangePwForm.getNew_password(), ChangePwForm.getConfirm_password());
 
             if (save) {
-                System.out.println("Ok Password salvato");
                 model.addAttribute("alert", "Password Saved");
                 return "redirect:/admin/account";
             } else {
-                System.out.println("Password non salvato");
                 model.addAttribute("alert", "Password not Saved");
                 return "adminchangepwDo :: resultschangepw";
             }
@@ -165,13 +155,11 @@ public class AdminController {
         User user = userDetailsService.loadUserById(userNoPW.getId());
 
         if (!(user.getUsername().equals(userNoPW.getUsername())) && userDetailsService.existsUserByUsername(userNoPW.getUsername())) {
-            System.out.println("username already present");
             model.addAttribute("alert", "Username already present");
 
         } else {
 
             if (bindingResult.hasErrors()) {
-                System.out.println("bindind ha errori");
                 model.addAttribute("alert", "Error Binding");
 
             } else {
@@ -186,11 +174,9 @@ public class AdminController {
                 Boolean save = userDetailsService.saveNoPw(user);
 
                 if (save) {
-                    System.out.println("Ok account salvato");
                     model.addAttribute("alert", "Account Saved");
                     return "redirect:/admin/account";
                 } else {
-                    System.out.println("Account non salvato");
                     model.addAttribute("alert", "Account not Saved");
                 }
 

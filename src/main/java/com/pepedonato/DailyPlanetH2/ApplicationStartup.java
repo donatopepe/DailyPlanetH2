@@ -30,7 +30,6 @@ public class ApplicationStartup
     @Override
     public void onApplicationEvent(final ApplicationReadyEvent event) {
         // here your code ...
-        System.out.println("ApplicationStartup");
     }
 
 } // class

@@ -63,25 +63,28 @@ public class UserController {
     @Autowired
     private CommentoServiceImpl commentoServiceImpl;
 
-    private static final Logger logger = LoggerFactory.getLogger(CommandLineRunnerBean.class);
-    private ArrayList<String> allCategorie;
-    private ArrayList<String> allUser;
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
+    /**
+     * Categorie disponibili per i form. Costruita ad ogni richiesta: prima erano campi
+     * di istanza mutati dai metodi (stato condiviso tra richieste concorrenti).
+     */
+    private ArrayList<String> categorieDisponibili() {
+        ArrayList<String> categorie = new ArrayList<>();
+        for (Categoria categoria : categoriaServiceImpl.getAll()) {
+            categorie.add(categoria.getNome());
+        }
+        return categorie;
+    }
 
     @GetMapping("/user")
     public String user(Model model) {
-        allCategorie = new ArrayList();
-        categoriaServiceImpl.getAll().forEach((categoria2) -> {
+        model.addAttribute("allCategorie", categorieDisponibili());
 
-            allCategorie.add(categoria2.getNome());
-            //  System.out.println("Categorie: " + categoria2.getNome());
-
-        });
-        model.addAttribute("allCategorie", allCategorie);
-        allUser = new ArrayList();
-        userDetailsService.findAll().forEach((user2) -> {
-            allUser.add(user2.getUsername());
-            //System.out.println(user2.getUsername());
-        });
+        ArrayList<String> allUser = new ArrayList<>();
+        for (User utente : userDetailsService.findAll()) {
+            allUser.add(utente.getUsername());
+        }
         model.addAttribute("allUser", allUser);
         return "user";
     }
@@ -106,19 +109,13 @@ public class UserController {
             BindingResult result) throws ServletException {
         //ModelAndView mav = new ModelAndView();
 
-        System.out.println(ChangePwForm.getUsername());
-        System.out.println(ChangePwForm.getPassword());
-        System.out.println(ChangePwForm.getNew_password());
-        System.out.println(ChangePwForm.getConfirm_password());
         Boolean ChangePassword = userDetailsService.ChangePassword(ChangePwForm.getUsername(), ChangePwForm.getPassword(), ChangePwForm.getNew_password(), ChangePwForm.getConfirm_password());
 
         if (ChangePassword) {
-            System.out.println("Cambio Password eseguito");
             mav.setViewName("redirect:/user");
             mav.addObject("alert", "Change password successfully");
             return mav;
         } else {
-            System.out.println("Cambio Password fallito");
             mav.addObject("ChangePwForm", ChangePwForm);
             mav.addObject("alert", "Change password unsuccessfully");
             mav.setViewName("changepwDo :: resultschangepw");
@@ -142,7 +139,6 @@ public class UserController {
 
             userNoPWRule.setDisabled(user.getDisabled());
 
-            System.out.println("Lancio id:" + user.getId());
             model.addAttribute("userNoPWRule", userNoPWRule);
 
             return "edituser";
@@ -158,13 +154,11 @@ public class UserController {
         model.addAttribute("userNoPWRule", userNoPWRule);
         User user = userDetailsService.loadUserById(userNoPWRule.getId());
         if (!(user.getUsername().equals(userNoPWRule.getUsername())) && userDetailsService.existsUserByUsername(userNoPWRule.getUsername())) {
-            System.out.println("username already present");
             model.addAttribute("alert", "Username already present");
             return "edituserDo :: results";
         } else {
 
             if (bindingResult.hasErrors()) {
-                System.out.println("bindind ha errori");
                 model.addAttribute("alert", "Error Binding");
 
             } else {
@@ -181,11 +175,9 @@ public class UserController {
                 Boolean save = userDetailsService.saveNoPw(user);
 
                 if (save) {
-                    System.out.println("Ok account salvato");
                     model.addAttribute("alert", "Account Saved");
                     return "redirect:/user";
                 } else {
-                    System.out.println("Account non salvato");
                     model.addAttribute("alert", "Account not Saved");
                 }
 
@@ -200,7 +192,6 @@ public class UserController {
         //ModelAndView mav = new ModelAndView();
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id);
         if (loadDomandaLavoroById != null) {
-            System.out.println("Lancio domanda id:" + id);
             model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id));
             //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
             model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id, Boolean.FALSE));
@@ -227,7 +218,6 @@ public class UserController {
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id_dom);
         Commento loadCommentoById = commentoServiceImpl.loadCommentoById(id_com);
         if ((loadDomandaLavoroById != null) && (loadCommentoById != null) && (loadCommentoById.getUser().getUsername().equals(SecurityContextHolder.getContext().getAuthentication().getName()))) {
-            System.out.println("Lancio domanda id:" + id_dom);
             model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id_dom));
             //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
             model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id_dom, Boolean.FALSE));
@@ -250,7 +240,6 @@ public class UserController {
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id_dom);
         Commento loadCommentoById = commentoServiceImpl.loadCommentoById(id_com);
         if ((loadDomandaLavoroById != null) && (loadCommentoById != null) && (loadCommentoById.getUser().getUsername().equals(SecurityContextHolder.getContext().getAuthentication().getName()))) {
-            System.out.println("Lancio domanda id:" + id_dom);
             model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id_dom));
             //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
             model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id_dom, Boolean.FALSE));
@@ -271,10 +260,8 @@ public class UserController {
     public String doNewCommento(@PathVariable Long id, @Valid @ModelAttribute("newcomment") Commento commento, BindingResult bindingResult, Model model, HttpServletRequest request) {
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id);
         if (bindingResult.hasErrors()) {
-            System.out.println("bindind ha errori " + bindingResult.toString());
             model.addAttribute("alert", "Error Binding");
             if (loadDomandaLavoroById != null) {
-                System.out.println("Lancio domanda id:" + id);
                 model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id));
                 //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
                 model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id, Boolean.FALSE));
@@ -288,13 +275,11 @@ public class UserController {
             }
 
         } else {
-            System.out.println("Provo a salvare commento per domanda id:" + id);
 
             if (loadDomandaLavoroById != null) {
 
                 commento.setRisposta(Boolean.FALSE);
                 if (commentoServiceImpl.saveCommentoDomanda(loadDomandaLavoroById.getId(), commento)) {
-                    System.out.println("Ok commento salvato: " + commento.getDescrizione());
                 }
 
             }
@@ -307,10 +292,8 @@ public class UserController {
     public String doNewAnswer(@PathVariable Long id, @Valid @ModelAttribute("newanswer") Commento commento, BindingResult bindingResult, Model model, HttpServletRequest request) {
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id);
         if (bindingResult.hasErrors()) {
-            System.out.println("bindind ha errori " + bindingResult.toString());
             model.addAttribute("alert", "Error Binding");
             if (loadDomandaLavoroById != null) {
-                System.out.println("Lancio domanda id:" + id);
                 model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id));
                 //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
                 model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id, Boolean.FALSE));
@@ -324,13 +307,11 @@ public class UserController {
                 return "newcommentoDo :: resultsnewcommento";
             }
         } else {
-            System.out.println("Provo a salvare commento per domanda id:" + id);
 
             if (loadDomandaLavoroById != null) {
 
                 commento.setRisposta(Boolean.TRUE);
                 if (commentoServiceImpl.saveCommentoDomanda(loadDomandaLavoroById.getId(), commento)) {
-                    System.out.println("Ok commento salvato: " + commento.getDescrizione());
                 }
 
             }
@@ -344,10 +325,8 @@ public class UserController {
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id_dom);
         Commento loadCommentoById = commentoServiceImpl.loadCommentoById(id_com);
         if (bindingResult.hasErrors()) {
-            System.out.println("bindind ha errori " + bindingResult.toString());
             model.addAttribute("alert", "Error Binding");
             if (loadCommentoById != null) {
-                System.out.println("Lancio domanda id:" + id_dom);
                 model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id_dom));
                 //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
                 model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id_dom, Boolean.FALSE));
@@ -362,13 +341,11 @@ public class UserController {
             }
 
         } else {
-            System.out.println("Provo a salvare commento per domanda id:" + id_dom + " comment id:" + id_com);
 
             if (loadCommentoById != null) {
 
                 commento.setRisposta(Boolean.FALSE);
                 if (commentoServiceImpl.saveCommentoCommento(loadCommentoById.getId(), commento)) {
-                    System.out.println("Ok commento salvato: " + commento.getDescrizione());
                 }
 
             }
@@ -382,7 +359,6 @@ public class UserController {
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id_dom);
         Commento loadCommentoById = commentoServiceImpl.loadCommentoById(id_com);
 
-        System.out.println("Lancio domanda id:" + id_dom);
         model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id_dom));
         //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
         model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id_dom, Boolean.FALSE));
@@ -407,14 +383,7 @@ public class UserController {
     @GetMapping("/user/newdomanda")
     public String newdomanda(Model model, ModelAndView mav) {
 
-        allCategorie = new ArrayList();
-        categoriaServiceImpl.getAll().forEach((categoria2) -> {
-
-            allCategorie.add(categoria2.getNome());
-//            System.out.println("Categorie: " + categoria2.getNome());
-
-        });
-        model.addAttribute("allCategorie", allCategorie);
+        model.addAttribute("allCategorie", categorieDisponibili());
         DomandaView domanda = new DomandaView();
         model.addAttribute("domanda", domanda);
 
@@ -425,7 +394,7 @@ public class UserController {
     //public String newdomandaDo(Model model, @RequestBody String json) throws Exception {
     public String newdomandaDo(@ModelAttribute("domanda") DomandaView domanda, Model model) throws Exception {
         model.addAttribute("domanda", domanda);
-        model.addAttribute("allCategorie", allCategorie);
+        model.addAttribute("allCategorie", categorieDisponibili());
 
         return "newdomandaDo :: resultsnewdomanda";
 
@@ -437,44 +406,34 @@ public class UserController {
 
         /*
         String referer = request.getHeader("Referer");
-        System.out.println("referer:" + referer);
         Enumeration headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             String key = (String) headerNames.nextElement();
             String value = request.getHeader(key);
             //   map.put(key, value);
-            System.out.println(key + ":" + value);
         }
          */
  /*
         if (bindingResult.hasErrors()) {
-            System.out.println("bindind ha errori");
             model.addAttribute("alert", "Error Binding");
 
         } else 
          */
         {
-            System.out.println("Aggiungi domanda>: " + domanda.getTitolo());
-            System.out.println("Titolo>:" + domanda.getTitolo());
-            System.out.println("Descrizione>:" + domanda.getDescrizione());
-            System.out.println("Categoria>:" + domanda.getCategoria());
             domanda.setCategoria(domanda.getCategoria());
-            System.out.println("Categorie>:" + domanda.getCategorie());
 
             /*
             domanda.setCategorie(categorie);
            
             if (domandaServiceImpl.saveDomandaLavoro(domanda)) {
-                System.out.println("Salvataggio domanda eseguito con successo");
                 mav.setViewName("redirect:/user");
                 return mav;
             } else {
-                System.out.println("Slavataggio domanda non eseguito");
             }
              */
         }
 
-        model.addAttribute("allCategorie", allCategorie);
+        model.addAttribute("allCategorie", categorieDisponibili());
         model.addAttribute("domanda", domanda);
         return "newdomandaDo :: resultsnewdomanda";
 
@@ -484,17 +443,10 @@ public class UserController {
     public String doNewDomanda(@Valid @ModelAttribute("domanda") DomandaView domanda, BindingResult bindingResult, Model model, HttpServletRequest request) throws Exception {
 
         if (bindingResult.hasErrors()) {
-            System.out.println("bindind ha errori " + bindingResult.toString());
             model.addAttribute("alert", "Error Binding");
 
         } else {
-            System.out.println("Aggiungi domanda>: " + domanda.getTitolo());
-            System.out.println("Titolo>:" + domanda.getTitolo());
-            System.out.println("Descrizione>:" + domanda.getDescrizione());
-            System.out.println("Categoria>:" + domanda.getCategoria());
             domanda.setCategoria(domanda.getCategoria());
-            System.out.println("Categorie>:" + domanda.getCategorie());
-            System.out.println("Numero categorie:" + domanda.getCategorie().size());
             if ((domanda.getCategorie() != null) && (domanda.getCategorie().size() > 0)) {
                 DomandaLavoro domandalavoro = new DomandaLavoro();
                 List<Categoria> categorie = new ArrayList();
@@ -504,7 +456,6 @@ public class UserController {
                         Categoria categoria = new Categoria();
                         categoria.setNome(elemento);
                         categorie.add(categoria);
-                        System.out.println("Inserisco in domanda lavoro categoria:" + elemento);
                     }
                 }
                 domandalavoro.setCategorie(categorie);
@@ -513,22 +464,19 @@ public class UserController {
                 domandalavoro.setDescrizione(domanda.getDescrizione());
                 domandalavoro.setClosed(domanda.getClosed());
                 if (domandaServiceImpl.saveDomandaLavoro(domandalavoro)) {
-                    System.out.println("Salvataggio domanda eseguito con successo");
                     model.addAttribute("alert", "Save success");
                     return "redirect:/user";
                 } else {
-                    System.out.println("Slavataggio domanda non eseguito");
                     model.addAttribute("alert", "Save Error");
                 }
             } else {
-                System.out.println("Inserire almeno una categoria");
                 model.addAttribute("alert", "Enter at least one category");
 
             }
 
         }
 
-        model.addAttribute("allCategorie", allCategorie);
+        model.addAttribute("allCategorie", categorieDisponibili());
         model.addAttribute("domanda", domanda);
 
         return "newdomandaDo :: resultsnewdomanda";
@@ -537,15 +485,9 @@ public class UserController {
     @PostMapping(value = "/user/doNewDomanda/DelCategory", produces = {MediaType.TEXT_HTML_VALUE})
     public String doDelCategoria(@Valid @ModelAttribute("domanda") DomandaView domanda, BindingResult bindingResult, Model model, HttpServletRequest request) {
 
-        System.out.println("Aggiungi domanda>: " + domanda.getTitolo());
-        System.out.println("Titolo>:" + domanda.getTitolo());
-        System.out.println("Descrizione>:" + domanda.getDescrizione());
-        System.out.println("Categoria>:" + domanda.getCategoria());
-        System.out.println("Categoria da cancellare>:" + domanda.getId_cat());
         domanda.delCategoria(domanda.getId_cat());
-        System.out.println("Categorie>:" + domanda.getCategorie());
 
-        model.addAttribute("allCategorie", allCategorie);
+        model.addAttribute("allCategorie", categorieDisponibili());
         model.addAttribute("domanda", domanda);
 
         return "newdomandaDo :: resultsnewdomanda";
@@ -555,11 +497,9 @@ public class UserController {
     public String editdomanda(@PathVariable Long id, Model model, ModelAndView mav) {
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id);
         if (loadDomandaLavoroById == null) {
-            System.out.println("Domanda non trovata");
         } else {
             if (loadDomandaLavoroById.getUser().getUsername().equals(SecurityContextHolder.getContext().getAuthentication().getName())) {
 
-                System.out.println("Edit domanda id: " + id);
 
                 DomandaView domandaView = new DomandaView();
                 domandaView.setId_domanda(id);
@@ -570,19 +510,11 @@ public class UserController {
                     domandaView.setCategoria(categoria.getNome());
                 }
 
-                allCategorie = new ArrayList();
-                categoriaServiceImpl.getAll().forEach((categoria2) -> {
-
-                    allCategorie.add(categoria2.getNome());
-                    //System.out.println("Categorie: " + categoria2.getNome());
-
-                });
-                model.addAttribute("allCategorie", allCategorie);
+                model.addAttribute("allCategorie", categorieDisponibili());
                 model.addAttribute("domanda", domandaView);
 
                 return "newdomanda";
             }
-            System.out.println("Errore utente");
         }
 
         return "redirect:/user";
@@ -598,7 +530,6 @@ public class UserController {
 
     @RequestMapping(value = "/user/listdomande/user/{user}", method = RequestMethod.GET)
     public String listdomandeuser(Model model, @PathVariable("user") String user) {
-        System.out.println("Cerco domande by user:" + user);
         model.addAttribute("domande", domandaServiceImpl.findByUser(user));
         return "listdomande :: resultsList";
     }
@@ -606,7 +537,6 @@ public class UserController {
     @RequestMapping(value = "/user/listdomande/date", method = RequestMethod.POST)
     public String listdomandedate(Model model, @RequestBody Map<String, Object> json) throws Exception {
 
-        System.out.println("Date start :" + json.get("datestart"));
 
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         Date end = df.parse(json.get("dateend").toString());
@@ -616,7 +546,6 @@ public class UserController {
         calendar.set(Calendar.MINUTE, 59);
         calendar.set(Calendar.SECOND, 59);
         Date date = calendar.getTime();
-        System.out.println("data end:" + date.toString());
         model.addAttribute("domande", domandaServiceImpl.findByDates(df.parse(json.get("datestart").toString()), date));
 
         return "listdomande :: resultsList";
@@ -647,38 +576,26 @@ public class UserController {
         categoria.setNome("prova categoria domanda 3");
         categorie.add(categoria);
         domandalavoro.setCategorie(categorie);
-        System.out.println("Provo a salvare");
         if (domandaServiceImpl.saveDomandaLavoro(domandalavoro)) {
-            System.out.println("Salvataggio domanda eseguito con successo");
         } else {
-            System.out.println("Slavataggio domanda non eseguito");
         }
 
         Commento commento = new Commento();
         commento.setDescrizione("Primo commento");
         commento.setRisposta(Boolean.FALSE);
         if (commentoServiceImpl.saveCommentoDomanda(domandalavoro.getId(), commento)) {
-            System.out.println("Ok commento salvato: " + commento.getDescrizione());
         }
 
-        System.out.println("Ricerca in base alla categoria");
         domandaServiceImpl.findByCategoria(categoria.getNome()).forEach((domanda) -> {
-            System.out.println("domanda: " + domanda.getId() + " " + domanda.getTitolo());
             commentoServiceImpl.findByDomandaRisposta(domanda.getId(), Boolean.FALSE).forEach((commento2) -> {
-                System.out.println("^^^^ Commento: " + commento2.getId() + " " + commento2.getDescrizione());
             });
         });
-        System.out.println("Ricerca in base all'utente attuale");
         domandaServiceImpl.findByUser(SecurityContextHolder.getContext().getAuthentication().getName()).forEach((domanda) -> {
-            System.out.println("domanda: " + domanda.getId() + " " + domanda.getTitolo());
         });
         commentoServiceImpl.findByUser(SecurityContextHolder.getContext().getAuthentication().getName()).forEach((commento2) -> {
-            System.out.println("^^^^ Risposta:" + commento2.getRisposta() + " " + commento2.getId() + " " + commento2.getDescrizione());
         });
-        System.out.println("Cerco categorie in base a domanda attuale");
 
         categoriaServiceImpl.findByDomanda(domandalavoro.getId()).forEach((categoria2) -> {
-            System.out.println("Trovata categoria " + categoria2.getNome());
         });
     }
      */
