@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test suite: 55 tests (unit, JPA, view rendering, route/role matrix, end-to-end flow).
 - Cross-platform build hardening: UTF-8 for compilation/tests/runtime, `.gitattributes`
   line-ending normalisation, Gradle toolchain auto-provisioning (JDK 17).
+- Multi-stage `Dockerfile` (multi-arch base images, non-root user, container healthcheck on
+  `/actuator/health`) and `docker-compose.yml` with PostgreSQL 17, named volume and
+  healthcheck-based startup order; `.env.example` with placeholders only.
+- GitHub Actions workflow: test matrix on Ubuntu, Windows and macOS plus a multi-arch
+  (linux/amd64 + linux/arm64) image build.
 
 ### Changed
 

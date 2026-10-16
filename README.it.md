@@ -23,7 +23,7 @@ Spring Boot 3.5, Java 17, Spring Security 6, Thymeleaf, H2/PostgreSQL, wrapper G
 7. [Ruoli e flussi principali](#ruoli-e-flussi-principali)
 8. [Rotte HTTP](#rotte-http)
 9. [Test](#test)
-10. [Build e avvio del jar](#build-e-avvio-del-jar)
+10. [Build, avvio del jar e Docker](#build-avvio-del-jar-e-docker)
 11. [Struttura del progetto](#struttura-del-progetto)
 12. [Risoluzione dei problemi](#risoluzione-dei-problemi)
 13. [Roadmap](#roadmap)
@@ -218,7 +218,7 @@ gradlew.bat clean test      # Windows
 
 Report HTML: `build/reports/tests/test/index.html`.
 
-## Build e avvio del jar
+## Build, avvio del jar e Docker
 
 ```bash
 ./gradlew clean build
@@ -226,6 +226,42 @@ java -jar build/libs/DailyPlanetH2-1.0.0-SNAPSHOT.jar --spring.profiles.active=d
 ```
 
 Endpoint di salute (pubblico, senza autenticazione): `GET /actuator/health` → `{"status":"UP"}`.
+
+### Docker
+
+Prerequisiti: Docker con il plugin Compose v2.
+
+```bash
+cp .env.example .env       # poi modificare i valori (le password sono obbligatorie)
+docker compose up --build   # applicazione su http://localhost:8080 + PostgreSQL
+docker compose down         # con -v elimina anche il volume del database
+```
+
+Cosa fa lo stack:
+
+- `db`: PostgreSQL 17 con volume dedicato (`db-data`) e healthcheck `pg_isready`;
+- `app`: immagine costruita dal `Dockerfile`, `SPRING_PROFILES_ACTIVE=prod`, credenziali di
+  database e del seed iniettate da `.env`, healthcheck del container su `/actuator/health`;
+- ordine di avvio: l'applicazione attende che il database sia pronto;
+- nessuna password di default: se manca una variabile, Compose si ferma con un messaggio
+  esplicito e l'applicazione rifiuta di partire (vedi `ProductionEnvironmentValidator`).
+
+Immagine singola:
+
+```bash
+docker build -t dailyplaneth2:1.0.0-SNAPSHOT .
+docker run --rm -e SPRING_PROFILES_ACTIVE=dev -p 8080:8080 dailyplaneth2:1.0.0-SNAPSHOT
+```
+
+Immagine multi-architettura (linux/amd64 + linux/arm64) — richiede buildx e QEMU:
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 -t dailyplaneth2:1.0.0-SNAPSHOT .
+```
+
+La stessa build gira in CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) insieme
+alla suite di test su Linux, macOS e Windows.
+
 
 ## Struttura del progetto
 
@@ -262,10 +298,9 @@ TODO.md                      piano di lavoro, decisioni, evidenze
 
 ## Roadmap
 
-- Immagine container multi-architettura e `docker-compose` con PostgreSQL.
-- Workflow CI che compila e testa su Linux, macOS e Windows.
 - Migrazioni di schema versionate (Flyway/Liquibase).
 - Screenshot e breve video dimostrativo nel README.
+- Opzionali: login OIDC/Keycloak, notifiche e-mail sui nuovi commenti.
 
 ## Licenza
 
