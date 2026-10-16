@@ -56,9 +56,9 @@ completa, README, licenza MIT, test verdi).
 | C8 | Suite di test automatica (unit + JPA + MockMvc + 1 E2E) verde | `./gradlew test`, rapporto HTML |
 | C9 | README completo (EN + IT): feature, stack, requisiti, setup, run, test, ruoli, deploy, troubleshooting | revisione file + comandi copiati ed eseguiti |
 | C10 | Licenza MIT + file di progetto pubblici (LICENSE, CHANGELOG, CONTRIBUTING, .gitignore corretto) | `ls`, intestazione licenza |
-| C11 | Distribuzione: Dockerfile + compose (app + Postgres) e CI GitHub Actions build+test | `docker build` (o lint se Docker assente) + workflow presente |
-| C12 | Rilascio: versione `1.0.0`, tag e note di rilascio; push solo dopo approvazione | tag locale, gate S9 |
-| C13 | **Cross-platform**: build e test verdi su Linux, macOS e Windows; nessun path assoluto o separatore di path hardcoded; UTF-8 forzato in compilazione/test/runtime; wrapper Gradle eseguibile su tutti e tre i sistemi; immagine Docker multi-arch | CI matrix 3 OS verde (S8.2) + `git ls-files --eol` normalizzato + grep su path assoluti + `docker buildx` multi-arch |
+| C11 | Distribuzione: Dockerfile + compose (app + Postgres) e CI GitHub Actions build+test | `docker build` → Successfully built; `docker compose --env-file .env.example config` valido; CI run 38893577795 verde |
+| C12 | Rilascio: versione `1.0.0`, tag e note di rilascio; push solo dopo approvazione | tag `v1.0.0` pubblicato + release GitHub con note (D4) |
+| C13 | **Cross-platform**: build e test verdi su Linux, macOS e Windows; nessun path assoluto; UTF-8; wrapper eseguibile sui tre sistemi; immagine multi-arch | **CI matrix 3 OS verde** (run 38893577795: ubuntu/windows/macos success) + job multi-arch success + `git ls-files --eol` normalizzato + grep path assoluti = 0 |
 
 ## Fasi, dipendenze, ordine, criteri di completamento
 
@@ -182,12 +182,16 @@ Viste/frammenti da creare (da `return "..."`
 - **Per chiudere S8.1**: liberare almeno ~1GB sulla radice, poi `docker compose --env-file .env.example up -d --build` + verifica `/actuator/health` e login; in alternativa la CI esegue test su 3 OS e la build multi-architettura a ogni push.
 
 ### S9 — Rilascio pubblico (dipende da S8) → C12
-- [ ] S9.1 `version = '1.0.0'`, tag annotato `v1.0.0`, note di rilascio.
-- [ ] S9.2 Revisione finale anti-segreto (`gitleaks` o grep mirato) e controllo file pubblicati.
-- [x] S9.3a **Push intermediario di sicurezza** (eseguito 2026-10-16): il branch `main` già pubblicato conteneva la credenziale di default del 2021; il push è stato fatto con `git push --force-with-lease=main:<sha-vecchio> origin main` (D6, mai `--force`). Evidenza: `1aeafc7...aecf705 main -> main (forced update)`; clone di verifica → `git grep` sul branch remoto: nessuna occorrenza del segreto.
-- [ ] S9.3b Push finale di `main` + tag `v1.0.0` + release GitHub: ora è un **fast-forward** (il remoto ha già la storia riscritta), quindi nessun `--force` è più necessario.
-- [ ] S9.4 **Azione umana residua**: inviare la richiesta a GitHub Support per la rimozione degli oggetti *dangling* (il vecchio commit è ancora servito per SHA: verificato `raw.githubusercontent.com/.../<sha-vecchio>/controller/DefaultController.java` → HTTP 200). Testo pronto in [`docs/github-history-purge.md`](docs/github-history-purge.md); a purge avvenuta, ripetere la verifica "commit non più scaricabile" e chiudere qui.
-- **AC**: rubrica 13/13; `./gradlew clean test` verde; scansione anti-segreto pulita; push del fast-forward e tag riusciti; richiesta di purge inviata (o rischio documentato come accettato dal proprietario: la credenziale era un default di un'app locale senza utenti reali).
+- [x] S9.1 `version = '1.0.0'`, plain jar disattivato (un solo artefatto `DailyPlanetH2-1.0.0.jar`), tag annotato `v1.0.0`, note di rilascio GitHub.
+- [x] S9.2 Revisione finale anti-segreto e controllo file pubblicati: 0 segreti nell'albero e in **tutta** la storia; nessun `.env` tracciato (solo `.env.example` con segnaposto); 0 path assoluti in codice/build; 0 `System.out`; indirizzo email personale rimosso dal `TODO.md` pubblicato.
+- [x] S9.3a **Push di sicurezza** (2026-10-16): `git push --force-with-lease=main:<sha-vecchio> origin main` → `1aeafc7...aecf705 (forced update)`; verifica su clone pulito: nessuna occorrenza del segreto nel branch remoto.
+- [x] S9.3b Push finale: `aecf705..5d0b0a0` e poi `5d0b0a0..d7448a4` (**fast-forward**, nessun `--force`), `git push origin v1.0.0`, release GitHub pubblicata.
+- [x] S9.3c **Esiti reali della CI** (prova di C13): run [38893577795](https://github.com/donatopepe/DailyPlanetH2/actions/runs/38893577795) → `Test (ubuntu-latest)` **success**, `Test (windows-latest)` **success**, `Test (macos-latest)` **success**, `Immagine Docker multi-architettura` (linux/amd64 + linux/arm64) **success**. Il primo run (38893311877) era rosso su tutti e 4 i job: difetto reale scoperto dalla CI (vedi sotto), corretto e riprovato.
+- [ ] S9.4 **Azione umana residua**: richiesta a GitHub Support per la rimozione degli oggetti *dangling* (il vecchio commit è ancora servito per SHA: `raw.githubusercontent.com/.../<sha-vecchio>/controller/DefaultController.java` → HTTP 200). Testo pronto in [`docs/github-history-purge.md`](docs/github-history-purge.md); a purge avvenuta ripetere la verifica "commit non più scaricabile".
+- **Stato**: COMPLETATO (2026-10-16) tranne S9.4, che richiede un'azione umana e non è eseguibile da un agente.
+- **Difetto reale trovato dalla prima esecuzione della CI (e corretto)**: `.gitignore` conteneva `*.jar` **dopo** l'eccezione `!gradle/wrapper/gradle-wrapper.jar`; l'ultima regola che corrisponde vince, quindi il wrapper **non era versionato** e qualunque clone pulito falliva con `Unable to access jarfile .../gradle-wrapper.jar` (tutti e 4 i job CI rossi, e gli archivi sorgente del tag non compilabili). Correzioni: eccezione spostata dopo `*.jar` con commento, wrapper versionato (48.749 byte), nuovo passo CI `Il wrapper Gradle è versionato` (`test -f …`) come guardia di regressione, tag `v1.0.0` ricreato sull'ultimo commit.
+- **Artefatti pubblicati**: release <https://github.com/donatopepe/DailyPlanetH2/releases/tag/v1.0.0> (tag annotato `v1.0.0`), `main` allineato al locale, jar `DailyPlanetH2-1.0.0.jar` costruibile con `./gradlew clean build`.
+- **Blocker residui**: (1) disco della macchina al 100% → verifica locale dello stack `docker compose` impossibile (la build dell'immagine è però verde in CI per amd64 e arm64); (2) purge GitHub degli oggetti dangling = azione umana S9.4.
 
 ## Decisioni approvate dal proprietario (2026-10-16)
 | # | Decisione | Stato |
@@ -202,7 +206,15 @@ Viste/frammenti da creare (da `return "..."`
 ## Blocker
 - (S0) Maven non installato → si usa Gradle + wrapper (nessun blocker reale).
 - (S0) `codegraph` MCP non esposto tra i tool; CLI `/usr/local/bin/codegraph` disponibile e usata come da preferenza globale.
-- (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 13/13, test verdi, nessun segreto).
+- (chiuso) Push/release S9 eseguiti il 2026-10-16 con i gate D4 soddisfatti: rubrica 13/13, `./gradlew clean test` verde (59 test), scansione anti-segreto pulita, push fast-forward e release pubblicata con CI verde.
+- (aperto, umano) S9.4: richiesta a GitHub Support per la rimozione degli oggetti dangling del vecchio commit.
+- (aperto, ambientale) Disco della macchina al 100% (~100MB liberi): impedisce la verifica locale di `docker compose` con PostgreSQL. La build dell'immagine per amd64 e arm64 è verde in CI.
 
-## Prossimo passo immediato
-S9.1 → S9.4 (rilascio: versione 1.0.0, tag annotato, note di rilascio, scansione anti-segreto finale, push `main` (fast-forward) + tag e release GitHub; restano aperti il blocker ambientale del disco per la verifica compose e la richiesta umana a GitHub Support per gli oggetti dangling).
+## Stato finale della rubrica (2026-10-16)
+
+**13/13 criteri soddisfatti con evidenza.** Uniche voci fuori dal controllo dell'agente:
+- **S9.4** (richiesta a GitHub Support per gli oggetti *dangling*): azione umana, testo pronto.
+- Verifica locale dello stack `docker compose` (PostgreSQL): impossibile per disco pieno al 100% sulla macchina; la build dell'immagine per `linux/amd64` e `linux/arm64` è verde in CI.
+
+## Prossimo passo
+Nessun task di piano residuo eseguibile dall'agente. Il lavoro riprende su richiesta: nuove feature (roadmap in `README.md`), versioni successive o l'azione umana S9.4.

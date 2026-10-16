@@ -52,6 +52,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `gradle/wrapper/gradle-wrapper.jar` was not tracked: the `*.jar` rule came **after** the
+  `!gradle/wrapper/gradle-wrapper.jar` exception in `.gitignore`, so the last matching rule
+  won and every clean clone failed with `Unable to access jarfile .../gradle-wrapper.jar`
+  (found by the first CI run; now guarded by a dedicated CI step).
 - Authentication was impossible (double encoding of the password on every login).
 - Development database reused a reserved table name (`user` → `users`).
 - Lazy-initialisation errors on collections used by templates
