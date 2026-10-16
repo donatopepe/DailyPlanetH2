@@ -10,8 +10,8 @@ i flussi utente/admin end-to-end e si può distribuire pubblicamente (build, gui
 completa, README, licenza MIT, test verdi).
 
 ## Metrica + soglia
-- **Metrica primaria**: criteri di rubrica soddisfatti / criteri totali (rubrica §Rubrica, 12 criteri).
-- **Soglia**: 12/12, e nessun criterio parziale.
+- **Metrica primaria**: criteri di rubrica soddisfatti / criteri totali (rubrica §Rubrica, 13 criteri).
+- **Soglia**: 13/13, e nessun criterio parziale.
 - **Metrica di supporto (gate dura)**: `./gradlew clean test` verde, 0 failure; avvio applicazione
   con profilo `dev` senza errori; matrice MockMvc §Casi tutta verde.
 
@@ -43,7 +43,7 @@ completa, README, licenza MIT, test verdi).
 5. Prima di ogni modifica non banale: `codegraph sync .` e verifica impatto (`query`/`explore`).
 6. Tree sempre verde a fine iterazione; se un passo rompe la build, si annulla il passo.
 
-## Rubrica di accettazione (12 criteri, 0/1 ciascuno)
+## Rubrica di accettazione (13 criteri, 0/1 ciascuno)
 | # | Criterio | Come si verifica |
 |---|---|---|
 | C1 | Build riproducibile con wrapper (`./gradlew clean build`) | comando verde da clone pulito |
@@ -58,6 +58,7 @@ completa, README, licenza MIT, test verdi).
 | C10 | Licenza MIT + file di progetto pubblici (LICENSE, CHANGELOG, CONTRIBUTING, .gitignore corretto) | `ls`, intestazione licenza |
 | C11 | Distribuzione: Dockerfile + compose (app + Postgres) e CI GitHub Actions build+test | `docker build` (o lint se Docker assente) + workflow presente |
 | C12 | Rilascio: versione `1.0.0`, tag e note di rilascio; push solo dopo approvazione | tag locale, gate S9 |
+| C13 | **Cross-platform**: build e test verdi su Linux, macOS e Windows; nessun path assoluto o separatore di path hardcoded; UTF-8 forzato in compilazione/test/runtime; wrapper Gradle eseguibile su tutti e tre i sistemi; immagine Docker multi-arch | CI matrix 3 OS verde (S8.2) + `git ls-files --eol` normalizzato + grep su path assoluti + `docker buildx` multi-arch |
 
 ## Fasi, dipendenze, ordine, criteri di completamento
 
@@ -71,6 +72,15 @@ completa, README, licenza MIT, test verdi).
 - **Evidenza**: `gradle wrapper --gradle-version 8.14` → BUILD SUCCESSFUL, `gradle-wrapper.properties` con `gradle-8.14-bin.zip`; `./gradlew help` → BUILD SUCCESSFUL (16s); `./gradlew dependencies --configuration compileClasspath` → BUILD SUCCESSFUL, `spring-boot-starter-{web,thymeleaf,security} -> 3.5.16`, `thymeleaf-extras-springsecurity6 -> 3.1.5.RELEASE`; `find src -type f` → 24 sorgenti in `src/main/java/com/pepedonato/DailyPlanetH2/**`; `./gradlew compileJava` → FAILED con 142 errori `package javax.*` (atteso, AC di S2).
 - **Blocker**: nessuno.
 
+### S1.5 — Cross-platform hardening del build (dipende da S1) → C13 (parziale)
+- [x] S1.5.1 `.gitattributes`: repo sempre LF, `*.bat`/`*.cmd`/`*.ps1` CRLF, binari esplicitamente binari.
+- [x] S1.5.2 UTF-8 forzato su `JavaCompile`, `JavaExec`, `Javadoc` e `Test` (`file.encoding=UTF-8`).
+- [x] S1.5.3 Toolchain auto-provisioning con `org.gradle.toolchains.foojay-resolver-convention` 0.10.0 (JDK 17 scaricato automaticamente su Linux/macOS/Windows se assente).
+- [x] S1.5.4 EOL normalizzati su tutto il repo (`git add --renormalize .`); nessuna modifica di contenuto oltre ai fine riga.
+- **Stato**: COMPLETATO (2026-10-16).
+- **Evidenza**: `./gradlew help` → BUILD SUCCESSFUL (20s) con plugin foojay; `./gradlew -q javaToolchains` → "Auto-detection: Enabled / Auto-download: Enabled", JDK 17 rilevato; `git check-attr -a gradlew gradlew.bat` → `gradlew: eol=lf`, `gradlew.bat: eol=crlf`; `git diff --cached --ignore-cr-at-eol --stat` → solo `build.gradle` e `settings.gradle` come modifiche reali (23 file solo normalizzazione EOL); `git ls-files -s gradlew` → mode `100755`.
+- **Nota**: la normalizzazione EOL dei 23 sorgenti elimina il rischio di diff rumorosi e problemi di fine riga tra Windows (NetBeans 2021) e Unix.
+
 ### S2 — Migrazione framework (dipende da S1) → C3, C4
 - [ ] S2.1 Sostituire import `javax.*` → `jakarta.*` (persistence, validation, servlet).
 - [ ] S2.2 Riscrivere `SpringSecurityConfig` con bean `SecurityFilterChain` + `authorizeHttpRequests`, `requestMatchers`, `formLogin`, `logout`, `accessDeniedHandler` (Spring Security 6).
@@ -83,7 +93,8 @@ completa, README, licenza MIT, test verdi).
 - [ ] S3.2 Rimuovere `codepasswordindb`: hash BCrypt in salvataggio, confronto via `PasswordEncoder.matches` in login e cambio password.
 - [ ] S3.3 Seed iniziale `data.sql`/`DataInitializer`: admin con password da variabile d'ambiente, primo accesso con cambio password forzato.
 - [ ] S3.4 Test: `@DataJpaTest` repository + unit `MyUserDetailsService` (login OK, password errata, utente disabilitato, cambio password).
-- **AC**: test S3 verdi; nessuna password in chiaro in DB (verifica su dump H2).
+- [ ] S3.5 **Cross-platform**: nessun path assoluto o separatore hardcoded; H2 in posizione relativa alla working directory; `spring.mandatory-file-encoding=UTF-8`; `data.sql` in UTF-8 senza BOM; date/ora con `ZoneId` esplicito.
+- **AC**: test S3 verdi; nessuna password in chiaro in DB (verifica su dump H2); `grep -rnE '([A-Za-z]:\\\\|/home/|/Users/|/tmp/)' src/main` vuoto.
 
 ### S4 — Viste Thymeleaf (dipende da S3) → C6
 Viste/frammenti da creare (da `return "..."`
@@ -110,19 +121,21 @@ Viste/frammenti da creare (da `return "..."`
 - [ ] S6.3 `@WebMvcTest`/MockMvc: matrice rotte × ruoli (anonimo 302→login, user 200/403, admin 200).
 - [ ] S6.4 `@SpringBootTest` E2E: login → crea domanda → commento → cambio stato → logout.
 - [ ] S6.5 Report: `build/reports/tests/test/index.html`, riepilogo in TODO.
-- **AC**: `./gradlew clean test` verde, 0 failure, matrice S6.3 completa.
+- [ ] S6.6 **Cross-platform**: nessun test dipende da separatori di path, fuso orario locale, codifica di piattaforma o permessi POSIX; casi parametrici su Linux/macOS/Windows (CI matrix S8.2).
+- **AC**: `./gradlew clean test` verde, 0 failure, matrice S6.3 completa; nessuna assunzione di piattaforma nei test (verifica: nessun `/tmp`, `\\`, `File.separator` o `TimeZone.getDefault()` nei test).
 
 ### S7 — Documentazione (dipende da S4, S6) → C9, C10
 - [ ] S7.1 `README.md` (EN) e `README.it.md` (IT): descrizione, feature, stack, requisiti, installazione, configurazione, esecuzione dev/prod, test, ruoli e flussi, deploy Docker, troubleshooting, struttura repo, screenshot.
 - [ ] S7.2 `LICENSE` MIT (© Donato Pepe), `CHANGELOG.md` (Keep a Changelog), `CONTRIBUTING.md`, `.editorconfig`.
 - [ ] S7.3 `docs/`: architettura, modello dati (ER), guida utente per ruolo, note di migrazione da Spring Boot 2 a 3.
-- **AC**: ogni comando del README eseguito per davvero e verificato; link interni validi.
+- [ ] S7.4 **Istruzioni per sistema operativo** nel README (EN e IT): Linux/macOS (`./gradlew`), Windows PowerShell/cmd (`gradlew.bat`, `$env:VAR` vs `set VAR`), tabella di comandi equivalenti, nota su UTF-8 e normalizzazione dei fine riga (`.gitattributes`), opzione Docker come percorso uniforme.
+- **AC**: ogni comando del README eseguito per davvero e verificato; link interni validi; per ogni OS esiste un percorso di avvio completo (dev e test).
 
-### S8 — Distribuzione (dipende da S7) → C11
-- [ ] S8.1 `Dockerfile` multi-stage + `docker-compose.yml` (app + PostgreSQL con volume).
-- [ ] S8.2 GitHub Actions `.github/workflows/ci.yml`: build + test su push/PR (Java 17).
-- [ ] S8.3 Profilo `prod` documentato: variabili d'ambiente per DB e credenziali, nessun default segreto.
-- **AC**: build immagine verde o, se Docker assente, `hadolint`/validazione equivalente + workflow con sintassi valida.
+### S8 — Distribuzione (dipende da S7) → C11, C13 (parziale)
+- [ ] S8.1 `Dockerfile` multi-stage **multi-architettura** (linux/amd64 + linux/arm64, buildx) + `docker-compose.yml` (app + PostgreSQL con volume).
+- [ ] S8.2 GitHub Actions `.github/workflows/ci.yml`: **matrix OS** `ubuntu-latest` / `windows-latest` / `macos-latest` con Java 17 e `shell: bash` per i passi Gradle (parità col comando `./gradlew`), build + test su push/PR.
+- [ ] S8.3 Profilo `prod` documentato: variabili d'ambiente per DB e credenziali, nessun default segreto; `.env.example` senza valori reali.
+- **AC**: `docker buildx build --platform linux/amd64,linux/arm64` verde o, se Docker assente, validazione equivalente; workflow con sintassi YAML valida e 3 job coerenti con `./gradlew clean test`.
 
 ### S9 — Rilascio pubblico (dipende da S8) → C12 — GATE UMANO
 - [ ] S9.1 `version = '1.0.0'`, tag annotato `v1.0.0`, note di rilascio.
@@ -136,13 +149,13 @@ Viste/frammenti da creare (da `return "..."`
 | D1 | Progetto target = `/home/public/DailyPlanetH2` | **confermato** dal proprietario |
 | D2 | DB produzione = PostgreSQL via variabili d'ambiente, H2 file in dev | **confermato** |
 | D3 | Build = Gradle 8.14 con wrapper committato, Spring Boot 3.5.16, Java 17 | **confermato** |
-| D4 | Rilascio pubblico (push `main` + tag `v1.0.0` + release GitHub) in S9 | **pre-approvato**: eseguibile senza ulteriore richiesta una volta che la rubrica è 12/12, `./gradlew clean test` è verde e la scansione anti-segreto è pulita (S9.2) |
+| D4 | Rilascio pubblico (push `main` + tag `v1.0.0` + release GitHub) in S9 | **pre-approvato**: eseguibile senza ulteriore richiesta una volta che la rubrica è 13/13, `./gradlew clean test` è verde e la scansione anti-segreto è pulita (S9.2) |
 | D5 | Licenza MIT con copyright "Donato Pepe" | **confermato** |
 
 ## Blocker
 - (S0) Maven non installato → si usa Gradle + wrapper (nessun blocker reale).
 - (S0) `codegraph` MCP non esposto tra i tool; CLI `/usr/local/bin/codegraph` disponibile e usata come da preferenza globale.
-- (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 12/12, test verdi, nessun segreto).
+- (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 13/13, test verdi, nessun segreto).
 
 ## Prossimo passo immediato
 S2.1 → S2.4 (migrazione `javax.*` → `jakarta.*` + Spring Security 6, con `codegraph sync` e analisi d'impatto): obiettivo primario riportare `./gradlew compileJava` verde.
