@@ -83,16 +83,18 @@ public class DomandaServiceImpl {
         domandaLavoro.setUser(user);
         List<Categoria> categorie = domandaLavoro.getCategorie();
 
-        if ((domandaLavoro.getId() != null) && domandaLavoroRepository.existsById(domandaLavoro.getId())) {
+        boolean aggiornamento = domandaLavoro.getId() != null
+                && domandaLavoroRepository.existsById(domandaLavoro.getId());
+        if (aggiornamento) {
             domandaLavoro.setDatamodificaNow();
-            domandaLavoro.setCategorie(categoriaServiceImpl.saveCategorie(categorie, domandaLavoro));
-
         } else {
             domandaLavoro.setDatacreazioneNow();
-            domandaLavoro.setCategorie(categoriaServiceImpl.saveCategorie(categorie, null));
         }
+
+        // Le categorie vengono persistite/ritrovate e assegnate al lato proprietario
+        // dell'associazione, poi la domanda viene salvata una sola volta.
+        domandaLavoro.setCategorie(categoriaServiceImpl.saveCategorie(categorie, domandaLavoro));
         DomandaLavoro save = domandaLavoroRepository.save(domandaLavoro);
-        domandaLavoro.setCategorie(categoriaServiceImpl.saveCategorie(categorie, save));
 
         return save != null;
 

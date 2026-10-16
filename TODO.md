@@ -141,13 +141,24 @@ Viste/frammenti da creare (da `return "..."`
 - **Blocker**: nessuno.
 
 ### S6 — Suite di test completa (dipende da S3, S4, S5) → C8
-- [ ] S6.1 Unit: `CategoriaServiceImpl`, `CommentoServiceImpl`, `DomandaServiceImpl`, `MyUserDetailsService`.
-- [ ] S6.2 `@DataJpaTest`: repository, query custom, relazioni.
-- [ ] S6.3 `@WebMvcTest`/MockMvc: matrice rotte × ruoli (anonimo 302→login, user 200/403, admin 200).
-- [ ] S6.4 `@SpringBootTest` E2E: login → crea domanda → commento → cambio stato → logout.
-- [ ] S6.5 Report: `build/reports/tests/test/index.html`, riepilogo in TODO.
-- [ ] S6.6 **Cross-platform**: nessun test dipende da separatori di path, fuso orario locale, codifica di piattaforma o permessi POSIX; casi parametrici su Linux/macOS/Windows (CI matrix S8.2).
-- **AC**: `./gradlew clean test` verde, 0 failure, matrice S6.3 completa; nessuna assunzione di piattaforma nei test (verifica: nessun `/tmp`, `\\`, `File.separator` o `TimeZone.getDefault()` nei test).
+- [x] S6.1 Unit: `CategoriaServiceImpl` (7), `CommentoServiceImpl` (5), `DomandaServiceImpl` (5), `MyUserDetailsService` (7) — mock dei repository, nessun database.
+- [x] S6.2 `@DataJpaTest`: `UserRepositoryTest` (3), `DomandaLavoroRepositoryTest` (5: query derivate, `EntityGraph` verificato dopo `entityManager.clear()`, più commenti per domanda, separazione commenti/risposte).
+- [x] S6.3 MockMvc: `RoleAccessMatrixTest` (5) — matrice anonimo/`ROLE_USER`/`ROLE_ADMIN` su rotte pubbliche, utente e admin; 403 ↔ redirect `/403`; 404 per rotte inesistenti.
+- [x] S6.4 `@SpringBootTest` E2E: `EndToEndFlowTest` (2) — login reale con form (sessione) → creazione domanda → commento → lettura pagina con il commento → logout → rotta protetta; più login con password errata.
+- [x] S6.5 Report: `build/reports/tests/test/index.html`; riepilogo sotto.
+- [x] S6.6 **Cross-platform**: nessun `/tmp`, `\`, `File.separator`, fuso orario di piattaforma o permesso POSIX nei test; H2 in memoria per i test; suite eseguibile identica sui tre OS (prova in S8.2).
+- **Stato**: COMPLETATO (2026-10-16).
+- **Evidenza**: `./gradlew clean test` → **BUILD SUCCESSFUL, tests=55 skipped=0 failures=0 errors=0**, ripartizione: `DailyPlanetH2ApplicationTests` 1, `AdminAccountInitializerTest` 4, `EndToEndFlowTest` 2, `RoleAccessMatrixTest` 5, `ViewRenderingTest` 11, `DomandaLavoroRepositoryTest` 5, `UserRepositoryTest` 3, `CategoriaServiceImplTest` 7, `CommentoServiceImplTest` 5, `DomandaServiceImplTest` 5, `MyUserDetailsServiceTest` 7. Nessun test dipende da dati preesistenti (pulizia ordinata o `@Transactional`).
+- **Difetti reali scoperti e corretti scrivendo i test** (nessuno era rilevabile a occhio):
+  1. `Commento.domanda`/`commento` erano `@OneToOne` → vincolo unique: impossibile avere più commenti (corretto in S4, ora coperto da test di regressione);
+  2. **binding della variabile di percorso**: `POST /user/doNewCommento/{id}` e `/user/doNewAnswer/{id}` legavano `id` al campo `Commento.id` → Hibernate trattava il commento nuovo come riga esistente (`ObjectOptimisticLockingFailureException`). Ora il testo arriva da `@RequestParam("descrizione")` e l'entità è costruita nel controller;
+  3. `Categoria.domande` era proprietario su **entrambi** i lati dell'associazione → due tabelle di join duplicate (`categoria_domande` + `domanda_lavoro_categorie`); ora lato inverso `mappedBy = "categorie"`;
+  4. `Categoria.addDomanda/removeDomanda` andavano in `LazyInitializationException`/NPE (collezione non inizializzata) e la persistenza passava dal lato inverso: ora sono operazioni in memoria null-safe, la persistenza è sul lato proprietario;
+  5. `saveCategorie` modificava la lista del chiamante con `List.set(...)` → `UnsupportedOperationException` con liste immutabili: ora ritorna una lista nuova;
+  6. `saveDomandaLavoro` salvava la domanda due volte (doppio `saveCategorie` + `save`): ora un solo salvataggio;
+  7. `GlobalExceptionHandler` rispondeva **HTTP 200** con la pagina di errore: ora `@ResponseStatus` (404/409/500) + gestore dedicato `NoResourceFoundException` e `templates/error.html` per la view di errore di Spring Boot.
+- **Effetto collaterale da documentare (S7.4)**: la correzione dell'associazione rimuove la tabella `categoria_domande`: i database di sviluppo H2 creati prima vanno ricreati (cancellare `./data`).
+- **Blocker**: nessuno.
 
 ### S7 — Documentazione (dipende da S4, S6) → C9, C10
 - [ ] S7.1 `README.md` (EN) e `README.it.md` (IT): descrizione, feature, stack, requisiti, installazione, configurazione, esecuzione dev/prod, test, ruoli e flussi, deploy Docker, troubleshooting, struttura repo, screenshot.
@@ -186,4 +197,4 @@ Viste/frammenti da creare (da `return "..."`
 - (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 13/13, test verdi, nessun segreto).
 
 ## Prossimo passo immediato
-S6.1 → S6.6 (suite di test completa: unit servizi, `@DataJpaTest`, matrice rotte × ruoli, E2E login→domanda→commento→logout, report).
+S7.1 → S7.4 (documentazione: README.md EN + README.it.md, CHANGELOG, CONTRIBUTING, .editorconfig, docs/ tecniche, istruzioni per sistema operativo, nota sulla ricreazione del DB di sviluppo).
