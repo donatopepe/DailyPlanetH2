@@ -8,41 +8,36 @@
 <main>
     <h1>Area utente</h1>
 
+    <p th:if="${param.alert != null}" class="alert ok" th:text="${param.alert}">esito</p>
+    <p th:if="${param.errore != null}" class="alert error" th:text="${param.errore}">errore</p>
+
     <div class="card">
         <h2>Azioni</h2>
         <p>
             <a class="button" th:href="@{/user/newdomanda}">Nuova domanda di lavoro</a>
+            <a class="button" th:href="@{/user/listdomande}">Elenco domande</a>
             <a class="button" th:href="@{/user/edituser}">Modifica il tuo account</a>
             <a class="button" th:href="@{/user/changepw}">Cambia password</a>
-            <a class="button" th:href="@{/user/listdomande}">Tutte le domande</a>
         </p>
     </div>
 
     <div class="card">
-        <h2>Filtri</h2>
-        <form th:action="@{/user/listdomande/category/__CATEGORIA__}" method="get" style="background:none;border:0;padding:0;"
-              onsubmit="this.action = this.action.replace('__CATEGORIA__', encodeURIComponent(this.categoria.value));">
-            <label for="categoria">Domande per categoria</label>
-            <select id="categoria" name="categoria">
+        <h2>Filtro rapido per categoria</h2>
+        <form method="get" th:action="@{/user/listdomande}">
+            <label for="categoria">Categoria</label>
+            <select id="categoria" name="categoria" required="required">
                 <option th:each="c : ${allCategorie}" th:value="${c}" th:text="${c}">categoria</option>
             </select>
-            <button type="submit">Filtra per categoria</button>
+            <button type="submit">Mostra le domande della categoria</button>
         </form>
     </div>
 
     <div class="card">
-        <h2>Utenti</h2>
-        <table>
-            <thead><tr><th>Nome utente</th></tr></thead>
-            <tbody>
-            <tr th:each="u : ${allUser}">
-                <td th:text="${u}">utente</td>
-            </tr>
-            <tr th:if="${allUser == null or #lists.isEmpty(allUser)}">
-                <td colspan="1">Nessun utente.</td>
-            </tr>
-            </tbody>
-        </table>
+        <h2>Utenti del portale</h2>
+        <ul>
+            <li th:each="u : ${allUser}" th:text="${u}">nome utente</li>
+            <li th:if="${allUser == null or #lists.isEmpty(allUser)}">Nessun utente.</li>
+        </ul>
     </div>
 </main>
 

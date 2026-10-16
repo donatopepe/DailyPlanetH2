@@ -6,6 +6,9 @@
 
 <main>
     <h1>Elenco account</h1>
+
+    <p th:if="${param.alert != null}" class="alert ok" th:text="${param.alert}">esito</p>
+    <p th:if="${param.errore != null}" class="alert error" th:text="${param.errore}">errore</p>
     <p><a class="button" th:href="@{/admin/newaccount}">Nuovo account</a></p>
 
     <table>

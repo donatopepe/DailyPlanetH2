@@ -29,10 +29,12 @@ public class MyUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final String dummyPasswordHash;
 
     public MyUserDetailsService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.dummyPasswordHash = passwordEncoder.encode("invalid-login-placeholder");
     }
 
     @Override
@@ -64,6 +66,9 @@ public class MyUserDetailsService implements UserDetailsService {
     public User loadUserByUsernameAndPassword(String username, String password) {
         User user = userRepository.findByUsername(username);
         if (user == null || Boolean.TRUE.equals(user.getDisabled())) {
+            // Mantiene il costo temporale dell'operazione anche per username assenti/disabilitati,
+            // riducendo il rischio di enumerazione degli account (nessuna password viene loggata).
+            passwordEncoder.matches("invalid-login-placeholder", dummyPasswordHash);
             log.debug("Autenticazione fallita per l'utente: {}", username);
             return null;
         }
@@ -132,6 +137,11 @@ public class MyUserDetailsService implements UserDetailsService {
      */
     public Boolean save(User user) {
         try {
+            // Regola di sicurezza: ogni account creato da zero (seed o area amministratore)
+            // deve cambiare la password al primo accesso.
+            if (user.getId() == null) {
+                user.setMustChangePassword(Boolean.TRUE);
+            }
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             userRepository.save(user);
             log.info("Account salvato: {}", user.getUsername());

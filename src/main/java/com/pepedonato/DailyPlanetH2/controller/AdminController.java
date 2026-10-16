@@ -11,6 +11,7 @@ import com.pepedonato.DailyPlanetH2.model.UserNoPW;
 import com.pepedonato.DailyPlanetH2.service.MyUserDetailsService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -63,26 +64,19 @@ public class AdminController {
     @PostMapping("/admin/doSaveAccount")
     public String doSaveAccount(@Valid @ModelAttribute("user") User user, BindingResult bindingResult, Model model, HttpServletRequest request) {
 
-        model.addAttribute("user", user);
-        if (userDetailsService.existsUserByUsername(user.getUsername())) {
-            model.addAttribute("alert", "Username already present");
-            return "newaccountDo :: results";
-        } else {
-            if (bindingResult.hasErrors()) {
-                model.addAttribute("alert", "Error Binding");
-                return "newaccountDo :: results";
-            } else {
-                Boolean save = userDetailsService.save(user);
-
-                if (save) {
-                    model.addAttribute("alert", "Account Saved");
-                } else {
-                    model.addAttribute("alert", "Account not Saved");
-                }
-            }
+        if (bindingResult.hasErrors()) {
+            return "redirect:/admin/newaccount?errore=Dati+non+validi";
         }
-
-        return "newaccountDo :: results";
+        if (user.getUserrole() == null || !List.of("USER", "ADMIN").contains(user.getUserrole())) {
+            return "redirect:/admin/newaccount?errore=Ruolo+non+valido";
+        }
+        if (userDetailsService.existsUserByUsername(user.getUsername())) {
+            return "redirect:/admin/newaccount?errore=Nome+utente+già+presente";
+        }
+        if (Boolean.TRUE.equals(userDetailsService.save(user))) {
+            return "redirect:/admin/account?alert=Account+creato";
+        }
+        return "redirect:/admin/newaccount?errore=Account+non+salvato";
     }
 
     @GetMapping("/admin/changepw/{id}")
@@ -90,6 +84,7 @@ public class AdminController {
         //ModelAndView mav = new ModelAndView();
         User user = userDetailsService.loadUserById(id);
         ChangePwForm changePwForm = new ChangePwForm();
+        changePwForm.setId(user.getId());
         changePwForm.setUsername(user.getUsername());
 
         mav.addObject("ChangePwForm", changePwForm);
@@ -124,66 +119,54 @@ public class AdminController {
     }
 
     @PostMapping("/admin/doAdminChangepw")
-    public String doAdminChangepw(@Valid
-            @ModelAttribute ChangePwForm ChangePwForm, BindingResult bindingResult, Model model, ModelAndView mav) {
-
-        mav.addObject("ChangePwForm", ChangePwForm);
-
-        if (bindingResult.hasErrors()) {
-            model.addAttribute("alert", "Error Binding");
-
-            return "adminchangepwDo :: resultschangepw";
-        } else {
-
-            Boolean save = userDetailsService.AdminChangePassword(ChangePwForm.getUsername(), ChangePwForm.getNew_password(), ChangePwForm.getConfirm_password());
-
-            if (save) {
-                model.addAttribute("alert", "Password Saved");
-                return "redirect:/admin/account";
-            } else {
-                model.addAttribute("alert", "Password not Saved");
-                return "adminchangepwDo :: resultschangepw";
-            }
+    public String doAdminChangepw(@Valid @ModelAttribute ChangePwForm form, BindingResult bindingResult) {
+        if (bindingResult.hasErrors() || form.getId() == null) {
+            return "redirect:/admin/account?errore=Password+non+valida";
         }
-
+        User target = userDetailsService.loadUserById(form.getId());
+        if (target == null) {
+            return "redirect:/admin/account?errore=Account+non+trovato";
+        }
+        boolean save = Boolean.TRUE.equals(userDetailsService.AdminChangePassword(
+                target.getUsername(), form.getNew_password(), form.getConfirm_password()));
+        return save
+                ? "redirect:/admin/account?alert=Password+reimpostata"
+                : "redirect:/admin/account?errore=Password+non+reimpostata+-+le+due+password+devono+coincidere";
     }
 
     @PostMapping("/admin/doEditAccount")
     public String doEditAccount(@Valid @ModelAttribute("userNoPW") UserNoPW userNoPW, BindingResult bindingResult, Model model, HttpServletRequest request) {
 
-        model.addAttribute("userNoPW", userNoPW);
+        if (userNoPW.getId() == null) {
+            return "redirect:/admin/account?errore=Account+non+trovato";
+        }
         User user = userDetailsService.loadUserById(userNoPW.getId());
-
-        if (!(user.getUsername().equals(userNoPW.getUsername())) && userDetailsService.existsUserByUsername(userNoPW.getUsername())) {
-            model.addAttribute("alert", "Username already present");
-
-        } else {
-
-            if (bindingResult.hasErrors()) {
-                model.addAttribute("alert", "Error Binding");
-
-            } else {
-
-                user.setUsername(userNoPW.getUsername());
-                user.setFirstname(userNoPW.getFirstname());
-                user.setLastname(userNoPW.getLastname());
-                user.setEmail(userNoPW.getEmail());
-                user.setUserrole(userNoPW.getUserrole());
-                user.setDisabled(userNoPW.getDisabled());
-
-                Boolean save = userDetailsService.saveNoPw(user);
-
-                if (save) {
-                    model.addAttribute("alert", "Account Saved");
-                    return "redirect:/admin/account";
-                } else {
-                    model.addAttribute("alert", "Account not Saved");
-                }
-
-            }
+        if (user == null) {
+            return "redirect:/admin/account?errore=Account+non+trovato";
         }
 
-        return "editaccountDo :: results";
+        if (!(user.getUsername().equals(userNoPW.getUsername()))
+                && userDetailsService.existsUserByUsername(userNoPW.getUsername())) {
+            return "redirect:/admin/edit/" + userNoPW.getId() + "?errore=Nome+utente+già+presente";
+        }
+        if (bindingResult.hasErrors()) {
+            return "redirect:/admin/edit/" + userNoPW.getId() + "?errore=Dati+non+validi";
+        }
+        // Mai permettere al client di impostare privilegi o stato da un DTO non validato.
+        if (!List.of("USER", "ADMIN").contains(userNoPW.getUserrole())) {
+            return "redirect:/admin/edit/" + userNoPW.getId() + "?errore=Ruolo+non+valido";
+        }
+        user.setUsername(userNoPW.getUsername());
+        user.setFirstname(userNoPW.getFirstname());
+        user.setLastname(userNoPW.getLastname());
+        user.setEmail(userNoPW.getEmail());
+        user.setUserrole(userNoPW.getUserrole());
+        user.setDisabled(Boolean.TRUE.equals(userNoPW.getDisabled()));
+
+        if (Boolean.TRUE.equals(userDetailsService.saveNoPw(user))) {
+            return "redirect:/admin/account?alert=Account+aggiornato";
+        }
+        return "redirect:/admin/edit/" + userNoPW.getId() + "?errore=Account+non+salvato";
     }
 
 }

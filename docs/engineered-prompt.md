@@ -113,6 +113,19 @@ Prossimo task: S<a>.<b>
 - Quando il piano è completo: non creare nuovi task decorativi, non aggiungere
   architettura non richiesta. Invia il report finale e proponi la cancellazione del loop.
 
+## Regole aggiuntive di sicurezza e accessibilità
+
+- Modifiche che cambiano il ruolo/stato/identità: derivare l'identità dal `SecurityContext`,
+  mai fidarsi di `id`, `username`, `role`, `disabled` o `mustChangePassword` dal form.
+- Ogni operazione su commento/domanda deve verificare ownership o authority admin,
+  confrontando l'entità associata al record e la sessione.
+- Le nuove pagine HTML devono essere complete (layout, messaggi, link di ritorno), usare
+  form HTML normali come fallback, avere CSRF e non dipendere da JavaScript inline.
+- Nessuna password/token/body/header di autenticazione nei log; CSP senza `unsafe-inline`
+  per script; HSTS solo su distribuzioni HTTPS.
+- Rate limit: evitare lockout globale per username; bucket per IP+username, limitato in
+  memoria e documentare i limiti di installazione multi-replica.
+
 ### Anti-pattern da evitare
 - Riscrivere il progetto da zero invece di migrarlo.- "Modernizzare" senza test che lo dimostrino.
 - Aggiungere dipendenze non necessarie (lombok, mapstruct, flyway) senza registrare

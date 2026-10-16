@@ -106,24 +106,16 @@ public class UserController {
     }
 
     @PostMapping("/user/doChangepw")
-    public ModelAndView doChangepw(HttpServletRequest request, HttpServletResponse response, @Valid @ModelAttribute ChangePwForm ChangePwForm, ModelAndView mav,
-            BindingResult result) throws ServletException {
-        //ModelAndView mav = new ModelAndView();
-
-        Boolean ChangePassword = userDetailsService.ChangePassword(ChangePwForm.getUsername(), ChangePwForm.getPassword(), ChangePwForm.getNew_password(), ChangePwForm.getConfirm_password());
-
-        if (ChangePassword) {
-            mav.setViewName("redirect:/user");
-            mav.addObject("alert", "Change password successfully");
-            return mav;
-        } else {
-            mav.addObject("ChangePwForm", ChangePwForm);
-            mav.addObject("alert", "Change password unsuccessfully");
-            mav.setViewName("changepwDo :: resultschangepw");
-
-            return mav;
+    public String doChangepw(@Valid @ModelAttribute ChangePwForm form, BindingResult result) {
+        String usernameAutenticato = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (result.hasErrors() || !usernameAutenticato.equals(form.getUsername())) {
+            return "redirect:/user/changepw?errore=Richiesta+non+valida";
         }
-
+        boolean aggiornata = Boolean.TRUE.equals(userDetailsService.ChangePassword(
+                usernameAutenticato, form.getPassword(), form.getNew_password(), form.getConfirm_password()));
+        return aggiornata
+                ? "redirect:/user?alert=Password+aggiornata"
+                : "redirect:/user/changepw?errore=Password+non+aggiornata+-+controllare+password+attuale+e+conferma";
     }
 
     @GetMapping("/user/edituser")
@@ -151,41 +143,25 @@ public class UserController {
 
     @PostMapping("/user/doEditUser")
     public String doEditUser(@Valid @ModelAttribute("userNoPWRule") UserNoPWRule userNoPWRule, BindingResult bindingResult, Model model, HttpServletRequest request) {
-
-        model.addAttribute("userNoPWRule", userNoPWRule);
-        User user = userDetailsService.loadUserById(userNoPWRule.getId());
-        if (!(user.getUsername().equals(userNoPWRule.getUsername())) && userDetailsService.existsUserByUsername(userNoPWRule.getUsername())) {
-            model.addAttribute("alert", "Username already present");
-            return "edituserDo :: results";
-        } else {
-
-            if (bindingResult.hasErrors()) {
-                model.addAttribute("alert", "Error Binding");
-
-            } else {
-
-                user.setUsername(userNoPWRule.getUsername());
-                user.setFirstname(userNoPWRule.getFirstname());
-                user.setLastname(userNoPWRule.getLastname());
-                user.setEmail(userNoPWRule.getEmail());
-
-                user.setDisabled(userNoPWRule.getDisabled());
-
-                // L'utente arriva dal database: la password è già un hash BCrypt.
-                // saveNoPw evita il doppio encoding (difetto della versione originale).
-                Boolean save = userDetailsService.saveNoPw(user);
-
-                if (save) {
-                    model.addAttribute("alert", "Account Saved");
-                    return "redirect:/user";
-                } else {
-                    model.addAttribute("alert", "Account not Saved");
-                }
-
-            }
+        String usernameAutenticato = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(usernameAutenticato);
+        if (user == null) {
+            return "redirect:/login";
         }
-
-        return "edituserDo :: results";
+        // Identità e stato sono derivati dalla sessione e dal DB, non dal form del browser.
+        if (userNoPWRule.getId() == null || !user.getId().equals(userNoPWRule.getId())) {
+            return "redirect:/user/edituser?errore=Richiesta+non+valida";
+        }
+        if (bindingResult.hasErrors()) {
+            return "redirect:/user/edituser?errore=Dati+non+validi+-+controllare+i+campi+obbligatori";
+        }
+        user.setFirstname(userNoPWRule.getFirstname());
+        user.setLastname(userNoPWRule.getLastname());
+        user.setEmail(userNoPWRule.getEmail());
+        if (Boolean.TRUE.equals(userDetailsService.saveNoPw(user))) {
+            return "redirect:/user?alert=Account+aggiornato";
+        }
+        return "redirect:/user/edituser?errore=Account+non+salvato";
     }
 
     @GetMapping("/user/domanda/{id}")
@@ -215,10 +191,9 @@ public class UserController {
 
     @GetMapping("/user/editcommento/{id_dom}/{id_com}")
     public String editcommento(@PathVariable("id_dom") Long id_dom, @PathVariable("id_com") Long id_com, Model model, ModelAndView mav) {
-        //ModelAndView mav = new ModelAndView();
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id_dom);
         Commento loadCommentoById = commentoServiceImpl.loadCommentoById(id_com);
-        if ((loadDomandaLavoroById != null) && (loadCommentoById != null) && (loadCommentoById.getUser().getUsername().equals(SecurityContextHolder.getContext().getAuthentication().getName()))) {
+        if (isProprietarioCommento(loadDomandaLavoroById, loadCommentoById)) {
             model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id_dom));
             //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
             model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id_dom, Boolean.FALSE));
@@ -237,10 +212,9 @@ public class UserController {
 
     @GetMapping("/user/editrisposta/{id_dom}/{id_com}")
     public String editrisposta(@PathVariable("id_dom") Long id_dom, @PathVariable("id_com") Long id_com, Model model, ModelAndView mav) {
-        //ModelAndView mav = new ModelAndView();
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id_dom);
         Commento loadCommentoById = commentoServiceImpl.loadCommentoById(id_com);
-        if ((loadDomandaLavoroById != null) && (loadCommentoById != null) && (loadCommentoById.getUser().getUsername().equals(SecurityContextHolder.getContext().getAuthentication().getName()))) {
+        if (isProprietarioCommento(loadDomandaLavoroById, loadCommentoById)) {
             model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id_dom));
             //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
             model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id_dom, Boolean.FALSE));
@@ -256,6 +230,24 @@ public class UserController {
         }
 
     }
+    /**
+     * Verifica proprietà, domanda e ruolo amministrativo prima di permettere modifiche a un
+     * commento: gli ID arrivano dalla richiesta e non costituiscono autorizzazione.
+     */
+    private boolean isProprietarioCommento(DomandaLavoro domanda, Commento commento) {
+        if (domanda == null || commento == null || commento.getUser() == null
+                || commento.getDomanda() == null
+                || !domanda.getId().equals(commento.getDomanda().getId())) {
+            return false;
+        }
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return false;
+        }
+        boolean admin = auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        return admin || commento.getUser().getUsername().equals(auth.getName());
+    }
+
     /**
      * Costruisce il commento da salvare leggendo solo il testo della richiesta.
      *
@@ -277,39 +269,22 @@ public class UserController {
         return commento;
     }
 
-    /** Aggiunge al model i dati della domanda usati dal frammento {@code newcommentoDo}. */
-    private void aggiungiDatiDomanda(Model model, DomandaLavoro domanda) {
-        Long id = domanda.getId();
-        model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id));
-        model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id, Boolean.FALSE));
-        model.addAttribute("risposte", commentoServiceImpl.findByDomandaRisposta(id, Boolean.TRUE));
-        model.addAttribute("domanda", domanda);
-        model.addAttribute("newcomment", new Commento());
-        model.addAttribute("newanswer", new Commento());
-        model.addAttribute("newcommentcomment", new Commento());
-        model.addAttribute("newanswercomment", new Commento());
-    }
-
     @PostMapping(value = "/user/doNewCommento/{id}", produces = {MediaType.TEXT_HTML_VALUE})
     public String doNewCommento(@PathVariable Long id,
                                 @RequestParam(name = "descrizione", required = false) String descrizione,
                                 Model model) {
         DomandaLavoro domanda = domandaServiceImpl.loadDomandaLavoroById(id);
+        if (domanda == null) {
+            return "redirect:/user/listdomande?errore=Domanda+non+trovata";
+        }
+
         Commento commento = commentoDaRichiesta(descrizione, Boolean.FALSE);
-
         if (commento == null) {
-            model.addAttribute("alert", "Il commento deve avere almeno 8 caratteri");
-            if (domanda != null) {
-                aggiungiDatiDomanda(model, domanda);
-                return "newcommentoDo :: resultsnewcommento";
-            }
-            return "redirect:/user";
+            return "redirect:/user/domanda/" + id + "?errore=Il+commento+deve+avere+almeno+8+caratteri";
         }
 
-        if (domanda != null) {
-            commentoServiceImpl.saveCommentoDomanda(domanda.getId(), commento);
-        }
-        return "redirect:/user";
+        commentoServiceImpl.saveCommentoDomanda(domanda.getId(), commento);
+        return "redirect:/user/domanda/" + id + "?alert=Commento+salvato";
     }
 
     @PostMapping(value = "/user/doNewAnswer/{id}", produces = {MediaType.TEXT_HTML_VALUE})
@@ -317,81 +292,67 @@ public class UserController {
                               @RequestParam(name = "descrizione", required = false) String descrizione,
                               Model model) {
         DomandaLavoro domanda = domandaServiceImpl.loadDomandaLavoroById(id);
+        if (domanda == null) {
+            return "redirect:/user/listdomande?errore=Domanda+non+trovata";
+        }
+
         Commento risposta = commentoDaRichiesta(descrizione, Boolean.TRUE);
-
         if (risposta == null) {
-            model.addAttribute("alert", "La risposta deve avere almeno 8 caratteri");
-            if (domanda != null) {
-                aggiungiDatiDomanda(model, domanda);
-                return "newcommentoDo :: resultsnewcommento";
-            }
-            return "redirect:/user";
+            return "redirect:/user/domanda/" + id + "?errore=La+risposta+deve+avere+almeno+8+caratteri";
         }
 
-        if (domanda != null) {
-            commentoServiceImpl.saveCommentoDomanda(domanda.getId(), risposta);
-        }
-        return "redirect:/user";
+        commentoServiceImpl.saveCommentoDomanda(domanda.getId(), risposta);
+        return "redirect:/user/domanda/" + id + "?alert=Risposta+salvata";
     }
 
     @PostMapping(value = "/user/doNewCommentoCommento/{id_dom}/{id_com}", produces = {MediaType.TEXT_HTML_VALUE})
-    public String doNewCommentoCommento(@PathVariable("id_dom") Long id_dom, @PathVariable("id_com") Long id_com, @Valid @ModelAttribute("newcommentcomment") Commento commento, BindingResult bindingResult, Model model, HttpServletRequest request) {
+    public String doNewCommentoCommento(@PathVariable("id_dom") Long id_dom, @PathVariable("id_com") Long id_com, @RequestParam(name = "descrizione", required = false) String descrizione, Model model) {
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id_dom);
         Commento loadCommentoById = commentoServiceImpl.loadCommentoById(id_com);
-        if (bindingResult.hasErrors()) {
-            model.addAttribute("alert", "Error Binding");
-            if (loadCommentoById != null) {
-                model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id_dom));
-                //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
-                model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id_dom, Boolean.FALSE));
-                model.addAttribute("risposte", commentoServiceImpl.findByDomandaRisposta(id_dom, Boolean.TRUE));
-                model.addAttribute("domanda", loadDomandaLavoroById);
-                model.addAttribute("newcomment", new Commento());
-                model.addAttribute("newanswer", new Commento());
-                model.addAttribute("newcommentcomment", commento);
-                model.addAttribute("newanswercomment", new Commento());
-
-                return "newcommentoDo :: resultsnewcommento";
-            }
-
-        } else {
-
-            if (loadCommentoById != null) {
-
-                commento.setRisposta(Boolean.FALSE);
-                if (commentoServiceImpl.saveCommentoCommento(loadCommentoById.getId(), commento)) {
-                }
-
-            }
+        if (!isProprietarioCommento(loadDomandaLavoroById, loadCommentoById)) {
+            return "redirect:/403";
         }
-        return "redirect:/user";
-
+        Commento nuovoCommento = commentoDaRichiesta(descrizione, Boolean.FALSE);
+        if (nuovoCommento == null) {
+            return "redirect:/user/domanda/" + id_dom + "?errore=Il+commento+deve+avere+almeno+8+caratteri";
+        }
+        commentoServiceImpl.saveCommentoCommento(id_com, nuovoCommento);
+        return "redirect:/user/domanda/" + id_dom + "?alert=Commento+salvato";
     }
 
     @PostMapping(value = "/user/editcommentocommento/{id_dom}/{id_com}", produces = {MediaType.TEXT_HTML_VALUE})
-    public String editcommentocommento(@PathVariable("id_dom") Long id_dom, @PathVariable("id_com") Long id_com, @Valid @ModelAttribute("newcommentcomment") Commento commento, BindingResult bindingResult, Model model, HttpServletRequest request) {
-        DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id_dom);
-        Commento loadCommentoById = commentoServiceImpl.loadCommentoById(id_com);
-
-        model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id_dom));
-        //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
-        model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id_dom, Boolean.FALSE));
-        model.addAttribute("risposte", commentoServiceImpl.findByDomandaRisposta(id_dom, Boolean.TRUE));
-        model.addAttribute("domanda", loadDomandaLavoroById);
-        model.addAttribute("newcomment", new Commento());
-        model.addAttribute("newanswer", new Commento());
-        model.addAttribute("newcommentcomment", loadCommentoById);
-        model.addAttribute("newanswercomment", new Commento());
-
-        return "newcommentoDo :: resultsnewcommento";
-
+    public String editcommentocommento(@PathVariable("id_dom") Long idDomanda,
+                                       @PathVariable("id_com") Long idCommento,
+                                       @RequestParam(name = "descrizione", required = false) String descrizione) {
+        DomandaLavoro domanda = domandaServiceImpl.loadDomandaLavoroById(idDomanda);
+        Commento commento = commentoServiceImpl.loadCommentoById(idCommento);
+        if (!isProprietarioCommento(domanda, commento)) {
+            return "redirect:/403";
+        }
+        Commento aggiornato = commentoDaRichiesta(descrizione, Boolean.FALSE);
+        if (aggiornato == null) {
+            return "redirect:/user/domanda/" + idDomanda + "?errore=Il+commento+deve+avere+almeno+8+caratteri";
+        }
+        aggiornato.setId(commento.getId());
+        commentoServiceImpl.saveCommentoDomanda(idDomanda, aggiornato);
+        return "redirect:/user/domanda/" + idDomanda + "?alert=Commento+aggiornato";
     }
 
     @RequestMapping(value = "/user/listcommenti/{id}", method = RequestMethod.GET)
-    public String listdomandeuser(Model model, @PathVariable("id") Long id) {
-        model.addAttribute("commentiper", commentoServiceImpl.findByCommento(id));
-        model.addAttribute("commento_id", id);
-        return "listcommentDo :: results";
+    public String listcommenti(Model model, @PathVariable("id") Long idCommento) {
+        Commento commento = commentoServiceImpl.loadCommentoById(idCommento);
+        List<Commento> commenti;
+        if (commento != null && commento.getDomanda() != null) {
+            // id di un commento della domanda: mostra i commenti della sua domanda
+            model.addAttribute("domanda", commento.getDomanda());
+            commenti = commentoServiceImpl.findByDomanda(commento.getDomanda().getId());
+        } else {
+            // id di un commento genitore: mostra le risposte collegate
+            commenti = commentoServiceImpl.findByCommento(idCommento);
+        }
+        model.addAttribute("commenti", commenti);
+        model.addAttribute("commento_id", idCommento);
+        return "listcommenti";
     }
 
     @GetMapping("/user/newdomanda")
@@ -414,7 +375,8 @@ public class UserController {
 
     }
 
-//    @RequestMapping(value = "/user/doNewDomanda", method = RequestMethod.POST, params = "action=Save Category")
+    // Il flusso web crea domanda e categoria insieme da /user/newdomanda.
+    // Endpoint conservato solo per compatibilità; non accetta operazioni privilegiate.
     @PostMapping(value = "/user/doNewDomanda/SaveCategory", produces = {MediaType.TEXT_HTML_VALUE})
     public String doSaveCategoria(@Valid @ModelAttribute("domanda") DomandaView domanda, BindingResult bindingResult, Model model, HttpServletRequest request) {
 
@@ -449,7 +411,7 @@ public class UserController {
 
         model.addAttribute("allCategorie", categorieDisponibili());
         model.addAttribute("domanda", domanda);
-        return "newdomandaDo :: resultsnewdomanda";
+        return "redirect:/user/newdomanda?errore=Selezionare+almeno+una+categoria";
 
     }
 
@@ -496,6 +458,8 @@ public class UserController {
         return "newdomandaDo :: resultsnewdomanda";
     }
 
+    // Categoria non viene eliminata tramite un POST browser: la cancellazione avrebbe
+    // impatto globale sulle domande e richiede un flusso amministrativo dedicato.
     @PostMapping(value = "/user/doNewDomanda/DelCategory", produces = {MediaType.TEXT_HTML_VALUE})
     public String doDelCategoria(@Valid @ModelAttribute("domanda") DomandaView domanda, BindingResult bindingResult, Model model, HttpServletRequest request) {
 
@@ -536,16 +500,19 @@ public class UserController {
 
 
     @RequestMapping(value = "/user/listdomande/category/{categoria}", method = RequestMethod.GET)
-    public String listdomande(Model model, @PathVariable("categoria") String categoria) {
+    public String listdomandePerCategoria(Model model, @PathVariable("categoria") String categoria) {
         model.addAttribute("domande", domandaServiceImpl.findByCategoria(categoria));
-
-        return "listdomande :: resultsList";
+        model.addAttribute("allCategorie", categorieDisponibili());
+        model.addAttribute("intestazioneFiltro", "Domande della categoria: " + categoria);
+        return "listdomande";
     }
 
     @RequestMapping(value = "/user/listdomande/user/{user}", method = RequestMethod.GET)
-    public String listdomandeuser(Model model, @PathVariable("user") String user) {
+    public String listdomandePerUtente(Model model, @PathVariable("user") String user) {
         model.addAttribute("domande", domandaServiceImpl.findByUser(user));
-        return "listdomande :: resultsList";
+        model.addAttribute("allCategorie", categorieDisponibili());
+        model.addAttribute("intestazioneFiltro", "Domande dell'utente: " + user);
+        return "listdomande";
     }
 
     @RequestMapping(value = "/user/listdomande/date", method = RequestMethod.POST)
@@ -562,15 +529,31 @@ public class UserController {
         Date date = calendar.getTime();
         model.addAttribute("domande", domandaServiceImpl.findByDates(df.parse(json.get("datestart").toString()), date));
 
-        return "listdomande :: resultsList";
+        model.addAttribute("allCategorie", categorieDisponibili());
+        return "listdomande";
 
     }
 
+    /**
+     * Elenco domande con filtri opzionali passati come parametri di query
+     * ({@code /user/listdomande?categoria=...&utente=...}): nessun JavaScript necessario.
+     */
     @RequestMapping(value = "/user/listdomande", method = RequestMethod.GET)
-    public String listdomande(Model model) {
-        // model.addAttribute("domande", domandaServiceImpl.getAll());
-        model.addAttribute("domande", domandaServiceImpl.findByMonth(6));
-        return "listdomande :: resultsList";
+    public String listdomande(Model model,
+                              @RequestParam(name = "categoria", required = false) String categoria,
+                              @RequestParam(name = "utente", required = false) String utente) {
+        model.addAttribute("allCategorie", categorieDisponibili());
+        if (categoria != null && !categoria.isBlank()) {
+            model.addAttribute("domande", domandaServiceImpl.findByCategoria(categoria));
+            model.addAttribute("intestazioneFiltro", "Domande della categoria: " + categoria);
+        } else if (utente != null && !utente.isBlank()) {
+            model.addAttribute("domande", domandaServiceImpl.findByUser(utente));
+            model.addAttribute("intestazioneFiltro", "Domande dell'utente: " + utente);
+        } else {
+            model.addAttribute("domande", domandaServiceImpl.findByMonth(6));
+            model.addAttribute("intestazioneFiltro", "Domande degli ultimi 6 mesi");
+        }
+        return "listdomande";
     }
     /*
     private void ProvaDomanda() {

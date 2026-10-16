@@ -7,6 +7,9 @@
 <main>
     <h1>Nuovo account</h1>
 
+    <p th:if="${param.alert != null}" class="alert ok" th:text="${param.alert}">esito</p>
+    <p th:if="${param.errore != null}" class="alert error" th:text="${param.errore}">errore</p>
+
     <form th:action="@{/admin/doSaveAccount}" th:object="${user}" method="post">
         <label for="username">Nome utente</label>
         <input type="text" id="username" th:field="*{username}" required="required"/>

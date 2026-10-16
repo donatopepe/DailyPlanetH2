@@ -7,21 +7,27 @@
 <main>
     <h1>Nuova domanda di lavoro</h1>
 
-    <form id="form-domanda" th:object="${domanda}" method="post"
-          th:action="@{/user/doNewDomanda/SaveQuestion}">
+    <p th:if="${param.alert != null}" class="alert ok" th:text="${param.alert}">esito</p>
+    <p th:if="${param.errore != null}" class="alert error" th:text="${param.errore}">errore</p>
+
+    <!-- Form con invio normale (nessun JavaScript): funziona anche con JS disattivato. -->
+    <form th:action="@{/user/doNewDomanda/SaveQuestion}" th:object="${domanda}" method="post">
         <input type="hidden" th:field="*{id_domanda}"/>
 
-        <label for="titolo">Titolo</label>
+        <label for="titolo">Titolo (minimo 8 caratteri)</label>
         <input type="text" id="titolo" th:field="*{titolo}" required="required" maxlength="120"/>
+        <div class="errore-campo" th:if="${#fields.hasErrors('titolo')}" th:errors="*{titolo}">errore</div>
 
-        <label for="descrizione">Descrizione</label>
-        <textarea id="descrizione" th:field="*{descrizione}" rows="4"></textarea>
+        <label for="descrizione">Descrizione (minimo 8 caratteri)</label>
+        <textarea id="descrizione" th:field="*{descrizione}" rows="4" required="required"></textarea>
+        <div class="errore-campo" th:if="${#fields.hasErrors('descrizione')}" th:errors="*{descrizione}">errore</div>
 
-        <label for="categoria">Categoria da associare</label>
-        <select id="categoria" th:field="*{categoria}">
-            <option value="">— seleziona —</option>
+        <label for="categoria">Categoria</label>
+        <select id="categoria" th:field="*{categoria}" required="required">
+            <option value="">— seleziona una categoria —</option>
             <option th:each="c : ${allCategorie}" th:value="${c}" th:text="${c}">categoria</option>
         </select>
+        <p class="help-text">Se scrivi un nome non presente nell'elenco viene creata una nuova categoria.</p>
 
         <label>
             <input type="checkbox" th:field="*{closed}"/> domanda chiusa
@@ -31,20 +37,9 @@
         <a class="button" th:href="@{/user}">Annulla</a>
     </form>
 
-    <div id="esito"></div>
+    <p><a th:href="@{/user/listdomande}">Vai all'elenco delle domande</a></p>
 </main>
 
-<script th:replace="~{layouts/main :: script-csrf}"></script>
-<script>
-    // Invio AJAX delle domande (il controller risponde con il frammento resultsnewdomanda).
-    document.getElementById('form-domanda').addEventListener('submit', function (event) {
-        event.preventDefault();
-        var form = event.target;
-        window.dpCsrf.fetch(form.action, {body: new URLSearchParams(new FormData(form))})
-            .then(function (r) { return r.text(); })
-            .then(function (html) { document.getElementById('esito').innerHTML = html; });
-    });
-</script>
-</body>
 <footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
 </html>

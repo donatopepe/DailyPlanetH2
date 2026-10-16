@@ -2,7 +2,7 @@
 
 > File unico di pianificazione (regola globale di progetto). Una sola fonte di verità:
 > ogni avanzamento aggiorna **Stato**, **Evidenza** e **Blocker** della voce interessata.
-> Ultimo aggiornamento: 2026-10-16 (analisi S0).
+> Ultimo aggiornamento: 2026-10-16 (S10 cybersecurity, implementato e testato localmente).
 
 ## Obiettivo (una frase)
 Rendere DailyPlanetH2 un'applicazione Spring Boot moderna che compila, si avvia, esegue
@@ -217,4 +217,29 @@ Viste/frammenti da creare (da `return "..."`
 - Verifica locale dello stack `docker compose` (PostgreSQL): impossibile per disco pieno al 100% sulla macchina; la build dell'immagine per `linux/amd64` e `linux/arm64` è verde in CI.
 
 ## Prossimo passo
-Nessun task di piano residuo eseguibile dall'agente. Il lavoro riprende su richiesta: nuove feature (roadmap in `README.md`), versioni successive o l'azione umana S9.4.
+Piano iniziale chiuso. Richiesta nuova del proprietario (2026-10-16): **"implementa cybersecurity"**. Avvio S10 con gate esplicito e deliverable qui sotto.
+
+## S10 — Hardening cybersecurity (richiesto dopo v1.0.0)
+
+### Gate di lavoro
+- **Obiettivo**: ridurre vulnerabilità concrete nelle superfici HTTP/sessioni/account, documentare le misure e provare i controlli con test negativi.
+- **Deliverable**: ownership/IDOR per account e commenti, password-change legato alla sessione, accesso negato a commenti altrui, header HTTP difensivi + CSP senza script inline, rate limit login, test di regressione e guida `docs/security.md`.
+- **Metrica**: verifiche di sicurezza passate / verifiche di sicurezza definite.
+- **Soglia**: 100%, zero vulnerabilità High/Critical non mitigata nelle superfici modificate.
+- **Casi e ordine**: (1) utente tenta IDOR su profilo/ruolo/stato; (2) utente tenta cambiare password di altro utente; (3) utente tenta leggere/modificare commenti altrui; (4) CSRF mancante/presente; (5) header/CSP; (6) brute force login/rate limit; (7) `./gradlew clean test`; poi dependency/audit statico e smoke.
+- **Baseline osservata**: S4–S9 avevano CSRF, BCrypt e alcune autorizzazioni, ma `doEditUser` si fidava di ID/username del form; POST cambio password si fidava dello username del form; commenti erano bindati a ID e alcune operazioni non verificavano owner; header CSP con `unsafe-inline`; nessun rate limit login. Form di account/commento ed elenchi AJAX erano inoltre incompleti/non usabili; verificati via browser-like MockMvc e corretti.
+- **Assunzione**: cybersecurity applicativa web (non audit infrastrutturale/pen test esterno); non introdurre servizi SaaS obbligatori né raccogliere credenziali.
+
+### Task S10
+- [x] S10.1 Self-service profilo: utente caricato dalla sessione; ID deve corrispondere; il controller aggiorna soltanto nome/cognome/email; ruolo, username e stato ignorati lato client. SecurityRegressionTest prova ID mismatch e escalation ADMIN/disabled.
+- [x] S10.2 Cambio password self-service: username deriva da SecurityContext, il form non può scegliere altro account; id amministrativo firmato dai dati server-side e username non più accettato dal form reset; FormFlowTest copre cambio valido e password attuale errata.
+- [x] S10.3 Commenti: form GET/POST verifica domanda associata e autore o ROLE_ADMIN; commento/risposta non bindati direttamente a entità per le nuove rotte; regressione IDOR.
+- [x] S10.4 Header: CSP `script-src 'self'`, no inline JS; `nosniff`, `DENY`, referrer policy, HSTS (HTTPS), `Cache-Control: no-store`; script esterno `/js/app.js`; tolto inline CSS dai template; SecurityHeadersTest.
+- [x] S10.5 Login rate limiting: 8 errori / 15 min → 429 + Retry-After per coppia IP+username, cooldown 15 min, bucket normalizzati, reset al successo, massimo 10.000 entry; LoginFailureTrackerTest + LoginRateLimitTest; dummy BCrypt per account inesistente/disabilitato.
+- [x] S10.6 Security regressions + `docs/security.md`: threat model, limiti, setup deploy, 59+ test aggiornati; niente body/headers nei log.
+- **Stato**: IMPLEMENTAZIONE + TEST + smoke locale COMPLETATI; non ancora pubblicato.
+- **Evidenza**: `./gradlew clean build` → BUILD SUCCESSFUL; `./gradlew clean test` → **75 test, 0 failure** (S10 aggiunge 16 regressioni: FormFlow 4, SecurityRegression 5, SecurityHeaders 2, LoginRateLimit 1, LoginFailureTracker 4); smoke jar reale: `/login` 200, POST login 302 `/user`, `/js/app.js` 200, header effettivi `nosniff`, `DENY`, Referrer-Policy, CSP `script-src 'self'; style-src 'self'`, Cache-Control `no-store`; rate-limit test invia 8 login errati e osserva 429 + `Retry-After`; SecurityRegressionTest prova IDOR/ruolo/disabled/comment ownership.
+- **Hardening confermato**: self-update usa ID in session/database e aggiorna solo nome/cognome/email; il form profilo rende username `readonly`; il cambio password self-service vincola l'username autenticato; reset password admin usa ID target server-side (il form non invia username); POST commento/resposta modifica verifica ownership oppure `ROLE_ADMIN`; session fixation `changeSessionId`, massimo 2 sessioni, logout invalida cookie; `Cache-Control: no-store`; script esterno senza inline JS; CSP senza `unsafe-inline` per script né stili; headers testati.
+- **Rate limit**: 8 fallimenti per coppia IP+username in 15 minuti → cooldown 15 minuti; success reset; mappa bounded 10.000 entry; username inesistente/disabilitato usa dummy BCrypt; nessuna password/token nel log.
+- **Limiti noti**: limiter in-memory per singola istanza, non condiviso in multi-replica; IP usa `remoteAddr` (non si fida di `X-Forwarded-For` client; dietro proxy verificare forwarding fidato); HSTS presuppone TLS HTTPS. Nessun pen test esterno; niente claim di certificazione/compliance.
+- **Gate deploy**: patch S10 non ancora pubblicata; `v1.0.0` resta immutabile. Prima della patch release: CI 3 OS + build multiarch e push fast-forward; nuova tag `v1.0.1` solo dopo tutti i gate.

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layouts/main :: head('Commenti della domanda')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Commenti della domanda</h1>
+    <p>
+        Domanda:
+        <strong th:text="${domanda != null ? domanda.titolo : ('#' + commento_id)}">titolo</strong>
+    </p>
+
+    <div class="card">
+        <div th:replace="~{fragments/commenti-table :: results}"></div>
+    </div>
+
+    <p>
+        <a class="button" th:if="${domanda != null}" th:href="@{'/user/domanda/' + ${domanda.id}}">Apri la domanda</a>
+        <a class="button" th:href="@{/user/listdomande}">Elenco domande</a>
+        <a class="button" th:href="@{/user}">Area utente</a>
+    </p>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
+</html>

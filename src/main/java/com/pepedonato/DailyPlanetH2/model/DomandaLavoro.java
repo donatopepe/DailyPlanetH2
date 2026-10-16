@@ -45,7 +45,7 @@ public class DomandaLavoro implements Serializable {
     @Size(max = 254, message = "Your title must at most 254 characters")
     private String titolo;
 
-    @Column(nullable = false, columnDefinition = "LONGTEXT")
+    @Column(nullable = false, length = 10000)
     @NotNull(message = "Description cannot be null")
     @Size(min = 8, message = "Your description must at least 8 characters")
     private String descrizione;

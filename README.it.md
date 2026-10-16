@@ -43,7 +43,11 @@ Spring Boot 3.5, Java 17, Spring Security 6, Thymeleaf, H2/PostgreSQL, wrapper G
   attuale richiesta per il cambio volontario, **cambio password obbligatorio al primo
   accesso** per gli account creati dal seed o da un amministratore.
 - **Controllo degli accessi**: form login, due ruoli (`ROLE_USER`, `ROLE_ADMIN`),
-  protezione CSRF su ogni form e chiamata AJAX, pagina 403 personalizzata.
+  protezione CSRF su ogni form e chiamata AJAX, pagina 403 personalizzata e rate limit
+  login per account/IP (8 errori in 15 minuti → pausa di 15 minuti).
+- **Hardening cybersecurity**: rotazione session ID al login, no-store sulle pagine private,
+  header CSP/anti-framing/nosniff/referrer, protezione IDOR sul profilo e verifica proprietà
+  commenti. Vedi [`docs/security.md`](docs/security.md) per minacce, controlli e limiti.
 - **Account iniziale**: il primo amministratore è creato da una variabile d'ambiente,
   mai da una credenziale scritta nel codice.
 - **Gestione errori**: `@ControllerAdvice` centralizzato con pagine 404/409/500 e log

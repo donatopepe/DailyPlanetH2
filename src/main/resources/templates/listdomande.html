@@ -1,32 +1,43 @@
 <!DOCTYPE html>
-<!-- Frammento: elenco domande di lavoro (AJAX o rendering parziale). -->
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layouts/main :: head('Domande di lavoro')}"></head>
 <body>
-<div th:fragment="resultsList">
-    <table>
-        <thead>
-        <tr><th>Id</th><th>Titolo</th><th>Autore</th><th>Categorie</th><th>Stato</th><th>Ultima modifica</th><th></th></tr>
-        </thead>
-        <tbody>
-        <tr th:each="d : ${domande}">
-            <td th:text="${d.id}">1</td>
-            <td th:text="${d.titolo}">titolo</td>
-            <td th:text="${d.user != null ? d.user.username : ''}">autore</td>
-            <td>
-                <span class="badge" th:each="c : ${d.categorie}" th:text="${c.nome}">categoria</span>
-            </td>
-            <td>
-                <span class="badge" th:if="${d.closed}">chiusa</span>
-                <span class="badge" th:unless="${d.closed}">aperta</span>
-            </td>
-            <td th:text="${d.datamodifica}">data</td>
-            <td><a th:href="@{'/user/domanda/' + ${d.id}}">apri</a></td>
-        </tr>
-        <tr th:if="${domande == null or #lists.isEmpty(domande)}">
-            <td colspan="7">Nessuna domanda trovata.</td>
-        </tr>
-        </tbody>
-    </table>
-</div>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Domande di lavoro</h1>
+
+    <p th:if="${param.alert != null}" class="alert ok" th:text="${param.alert}">esito</p>
+
+    <div class="card">
+        <h2>Filtri</h2>
+        <form method="get" th:action="@{/user/listdomande}">
+            <label for="categoria">Categoria</label>
+            <select id="categoria" name="categoria">
+                <option value="">— tutte —</option>
+                <option th:each="c : ${allCategorie}" th:value="${c}" th:text="${c}"
+                        th:selected="${param.categoria != null and param.categoria[0] == c}">categoria</option>
+            </select>
+
+            <label for="utente">Autore (nome utente)</label>
+            <input type="text" id="utente" name="utente" th:value="${param.utente != null ? param.utente[0] : ''}"/>
+
+            <button type="submit">Filtra</button>
+            <a class="button" th:href="@{/user/listdomande}">Azzera filtri</a>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2 th:text="${intestazioneFiltro != null ? intestazioneFiltro : 'Tutte le domande'}">Tutte le domande</h2>
+        <div th:replace="~{fragments/domande-table :: resultsList}"></div>
+    </div>
+
+    <p>
+        <a class="button" th:href="@{/user/newdomanda}">Nuova domanda di lavoro</a>
+        <a class="button" th:href="@{/user}">Torna all'area utente</a>
+    </p>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
 </body>
 </html>

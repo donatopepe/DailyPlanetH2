@@ -7,7 +7,8 @@
 <main>
     <h1>Accesso</h1>
 
-    <div class="alert error" th:if="${param.error != null}">Credenziali non valide oppure utente disabilitato.</div>
+    <div class="alert error" th:if="${param.error != null and param.error[0] != 'rate-limit'}">Credenziali non valide oppure utente disabilitato.</div>
+    <div class="alert error" th:if="${param.error != null and param.error[0] == 'rate-limit'}">Troppi tentativi di accesso. Attendere prima di riprovare.</div>
     <div class="alert ok" th:if="${param.logout != null}">Sessione chiusa correttamente.</div>
 
     <form th:action="@{/login}" method="post">
@@ -20,7 +21,7 @@
         <button type="submit">Accedi</button>
     </form>
 
-    <p style="font-size:0.9rem;">
+    <p class="help-text">
         Primo avvio: l'account amministratore è creato dal seed configurato
         (<code>DAILYPLANET_ADMIN_USERNAME</code> / <code>DAILYPLANET_ADMIN_PASSWORD</code>).
         Al primo accesso il cambio password è obbligatorio.

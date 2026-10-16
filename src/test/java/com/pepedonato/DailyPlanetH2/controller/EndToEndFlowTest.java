@@ -85,7 +85,7 @@ class EndToEndFlowTest {
                         .param("username", USERNAME)
                         .param("password", PASSWORD))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/home"))
+                .andExpect(redirectedUrl("/user"))
                 .andReturn();
 
         MockHttpSession session = (MockHttpSession) result.getRequest().getSession(false);
@@ -122,7 +122,7 @@ class EndToEndFlowTest {
         mockMvc.perform(post("/user/doNewCommento/" + domanda.getId()).session(session).with(csrf())
                         .param("descrizione", testoCommento))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/user"));
+                .andExpect(redirectedUrl("/user/domanda/" + domanda.getId() + "?alert=Commento+salvato"));
 
         List<Commento> commenti = commentoRepository.findByDomandaOrderByDatamodificaAsc(domanda);
         assertEquals(1, commenti.size(), "il commento deve essere persistito");

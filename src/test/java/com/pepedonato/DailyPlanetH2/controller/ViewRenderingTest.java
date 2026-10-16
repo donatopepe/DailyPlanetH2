@@ -167,17 +167,22 @@ class ViewRenderingTest {
     @DisplayName("Frammenti utente: elenco domande e commenti")
     void frammentiUtente() throws Exception {
         mockMvc.perform(get("/user/listdomande")).andExpect(status().isOk())
-                .andExpect(view().name("listdomande :: resultsList"));
+                .andExpect(view().name("listdomande"));
         mockMvc.perform(get("/user/listdomande/user/user.test")).andExpect(status().isOk())
-                .andExpect(view().name("listdomande :: resultsList"));
+                .andExpect(view().name("listdomande"));
         mockMvc.perform(get("/user/listdomande/category/" + categoriaNome)).andExpect(status().isOk())
-                .andExpect(view().name("listdomande :: resultsList"));
+                .andExpect(view().name("listdomande"));
         // La rotta riceve l'id di un COMMENTO (vedi nota in TODO.md, S5: nome parametro da chiarire)
         mockMvc.perform(get("/user/listcommenti/" + commentoId)).andExpect(status().isOk())
-                .andExpect(view().name("listcommentDo :: results"));
+                .andExpect(view().name("listcommenti"));
         // id inesistente: nessuna eccezione, elenco vuoto
         mockMvc.perform(get("/user/listcommenti/999999")).andExpect(status().isOk())
-                .andExpect(view().name("listcommentDo :: results"));
+                .andExpect(view().name("listcommenti"));
+        // filtri via parametri di query (nessun JavaScript necessario)
+        mockMvc.perform(get("/user/listdomande").param("categoria", categoriaNome))
+                .andExpect(status().isOk()).andExpect(view().name("listdomande"));
+        mockMvc.perform(get("/user/listdomande").param("utente", "user.test"))
+                .andExpect(status().isOk()).andExpect(view().name("listdomande"));
     }
 
     @Test
@@ -238,8 +243,8 @@ class ViewRenderingTest {
                         .param("lastname", "Utente")
                         .param("email", "nuovo@example.invalid")
                         .param("userrole", "USER"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("newaccountDo :: results"));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/account?alert=Account+creato"));
     }
 
     @Test

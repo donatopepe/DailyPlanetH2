@@ -7,6 +7,9 @@
 <main>
     <h1>Modifica account</h1>
 
+    <p th:if="${param.alert != null}" class="alert ok" th:text="${param.alert}">esito</p>
+    <p th:if="${param.errore != null}" class="alert error" th:text="${param.errore}">errore</p>
+
     <form th:action="@{/admin/doEditAccount}" th:object="${userNoPW}" method="post">
         <input type="hidden" th:field="*{id}"/>
 

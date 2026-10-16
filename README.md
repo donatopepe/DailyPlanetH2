@@ -43,7 +43,12 @@ Spring Boot 3.5, Java 17, Spring Security 6, Thymeleaf, H2/PostgreSQL, Gradle wr
   password required for self-service change, **mandatory password change at first
   access** for accounts created by the seed or by an administrator.
 - **Access control**: form login, two roles (`ROLE_USER`, `ROLE_ADMIN`), CSRF protection
-  enabled on every form and AJAX call, custom 403 page.
+  enabled on every form and AJAX call, custom 403 page, per-account/IP login rate limiting
+  (8 failures in 15 minutes → 15-minute cooldown).
+- **Cybersecurity hardening**: session ID rotation at login, no-store on private pages,
+  CSP/anti-framing/nosniff/referrer headers, self-service IDOR prevention and ownership
+  checks for comment editing. See [`docs/security.md`](docs/security.md) for threat model,
+  controls and limitations.
 - **Seed account**: the first administrator is created from an environment variable, never
   from a default committed in the code.
 - **Error handling**: centralised `@ControllerAdvice` with 404/409/500 pages and logging

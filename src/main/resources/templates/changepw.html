@@ -6,6 +6,9 @@
 
 <main>
     <h1>Cambio password</h1>
+
+    <p th:if="${param.alert != null}" class="alert ok" th:text="${param.alert}">esito</p>
+    <p th:if="${param.errore != null}" class="alert error" th:text="${param.errore}">errore</p>
     <p th:if="${forzato}" class="alert error">
         Per motivi di sicurezza devi impostare una nuova password prima di proseguire.
     </p>

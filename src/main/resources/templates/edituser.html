@@ -7,11 +7,14 @@
 <main>
     <h1>Modifica il tuo account</h1>
 
+    <p th:if="${param.alert != null}" class="alert ok" th:text="${param.alert}">esito</p>
+    <p th:if="${param.errore != null}" class="alert error" th:text="${param.errore}">errore</p>
+
     <form th:action="@{/user/doEditUser}" th:object="${userNoPWRule}" method="post">
         <input type="hidden" th:field="*{id}"/>
 
         <label for="username">Nome utente</label>
-        <input type="text" id="username" th:field="*{username}" required="required"/>
+        <input type="text" id="username" th:field="*{username}" readonly="readonly" aria-readonly="true"/>
         <div class="errore-campo" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">errore</div>
 
         <label for="firstname">Nome</label>

@@ -34,7 +34,11 @@ public class ForcedPasswordChangeInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        if (Boolean.TRUE.equals(userDetailsService.isPasswordChangeRequired(authentication.getName()))) {
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        boolean passwordRoute = path.equals("/user/changepw") || path.equals("/user/doChangepw")
+                || path.equals("/logout") || path.startsWith("/css/") || path.startsWith("/js/")
+                || path.startsWith("/images/") || path.equals("/favicon.ico");
+        if (!passwordRoute && Boolean.TRUE.equals(userDetailsService.isPasswordChangeRequired(authentication.getName()))) {
             response.sendRedirect(request.getContextPath() + "/user/changepw");
             return false;
         }

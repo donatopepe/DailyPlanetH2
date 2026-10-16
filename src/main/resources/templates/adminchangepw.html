@@ -6,10 +6,13 @@
 
 <main>
     <h1>Reimposta password</h1>
+
+    <p th:if="${param.alert != null}" class="alert ok" th:text="${param.alert}">esito</p>
+    <p th:if="${param.errore != null}" class="alert error" th:text="${param.errore}">errore</p>
     <p>Account: <strong th:text="${ChangePwForm.username}">utente</strong></p>
 
     <form th:action="@{/admin/doAdminChangepw}" th:object="${ChangePwForm}" method="post">
-        <input type="hidden" th:field="*{username}"/>
+        <input type="hidden" th:field="*{id}"/>
 
         <label for="new_password">Nuova password</label>
         <input type="password" id="new_password" th:field="*{new_password}" required="required"/>

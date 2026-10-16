@@ -7,6 +7,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
 /**
@@ -28,9 +30,11 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 public class SpringSecurityConfig {
 
     private final AccessDeniedHandler accessDeniedHandler;
+    private final LoginFailureTracker loginFailureTracker;
 
-    public SpringSecurityConfig(AccessDeniedHandler accessDeniedHandler) {
+    public SpringSecurityConfig(AccessDeniedHandler accessDeniedHandler, LoginFailureTracker loginFailureTracker) {
         this.accessDeniedHandler = accessDeniedHandler;
+        this.loginFailureTracker = loginFailureTracker;
     }
 
     @Bean
@@ -49,16 +53,60 @@ public class SpringSecurityConfig {
                         .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/home", true)
+                        .successHandler(loginSuccessHandler())
+                        .failureHandler(loginFailureHandler())
                         .permitAll())
+                .sessionManagement(session -> session
+                        .sessionFixation(fixation -> fixation.changeSessionId())
+                        .maximumSessions(2)
+                        .maxSessionsPreventsLogin(false))
+                .requestCache(cache -> cache.disable())
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID")
                         .permitAll())
-                .exceptionHandling(exception -> exception
-                        .accessDeniedHandler(accessDeniedHandler));
+                // Header di difesa lato browser: niente sniffing MIME, framing o referrer
+                // completo su origini diverse. HSTS è attivo: prod va servito in HTTPS.
+                .headers(headers -> headers
+                        .contentTypeOptions(contentType -> { })
+                        .frameOptions(frame -> frame.deny())
+                        .referrerPolicy(referrer -> referrer
+                                .policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31_536_000))
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'")))
+                .exceptionHandling(exception -> exception.accessDeniedHandler(accessDeniedHandler));
 
         return http.build();
+    }
+
+    private AuthenticationSuccessHandler loginSuccessHandler() {
+        return (request, response, authentication) -> {
+            String username = authentication.getName();
+            loginFailureTracker.reset(LoginRateLimitFilter.key(request.getRemoteAddr(), username));
+            response.sendRedirect(request.getContextPath() + "/user");
+        };
+    }
+
+    private AuthenticationFailureHandler loginFailureHandler() {
+        return (request, response, exception) -> {
+            String username = request.getParameter("username");
+            String key = LoginRateLimitFilter.key(request.getRemoteAddr(), username);
+            // Un solo incremento per fallimento: questo handler è il punto di registrazione.
+            loginFailureTracker.registerFailure(key);
+            if (loginFailureTracker.isBlocked(key)) {
+                response.setStatus(429);
+                response.setHeader("Retry-After", Long.toString(loginFailureTracker.retryAfterSeconds(key)));
+                request.getRequestDispatcher("/login?error=rate-limit").forward(request, response);
+            } else {
+                response.sendRedirect(request.getContextPath() + "/login?error");
+            }
+        };
     }
 
     @Bean

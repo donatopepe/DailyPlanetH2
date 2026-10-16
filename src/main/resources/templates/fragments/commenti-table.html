@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<!--
+  Frammento riutilizzabile: tabella dei commenti di una domanda.
+  il frammento si chiama fragments/commenti-table :: results.
+-->
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="results">
+    <table>
+        <thead><tr><th>Id</th><th>Autore</th><th>Commento</th><th>Data</th></tr></thead>
+        <tbody>
+        <tr th:each="c : ${commenti}">
+            <td th:text="${c.id}">1</td>
+            <td th:text="${c.user != null ? c.user.username : ''}">autore</td>
+            <td th:text="${c.descrizione}">commento</td>
+            <td th:text="${c.datacreazione}">data</td>
+        </tr>
+        <tr th:if="${commenti == null or #lists.isEmpty(commenti)}">
+            <td colspan="4">Nessun commento per questa domanda.</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

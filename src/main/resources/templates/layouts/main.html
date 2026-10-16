@@ -14,12 +14,13 @@
     <meta name="_csrf" th:content="${_csrf.token}" th:if="${_csrf != null}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}" th:if="${_csrf != null}"/>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <script th:src="@{/js/app.js}" defer="defer"></script>
 </head>
 
 <body>
 
 <header class="app-header" th:fragment="nav">
-    <span class="brand"><a th:href="@{/about}" style="color:#fff;text-decoration:none;">DailyPlanetH2</a></span>
+    <span class="brand"><a th:href="@{/about}" class="brand-link">DailyPlanetH2</a></span>
     <nav>
         <a th:href="@{/about}">Informazioni</a>
         <a sec:authorize="hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')" th:href="@{/user}">Area utente</a>
@@ -29,14 +30,14 @@
     <span class="utente" sec:authorize="isAuthenticated()">
         <span th:text="${#authentication.name}">utente</span>
         ·
-        <a th:href="@{/user/changepw}" style="color:#e8f0f9;">Cambia password</a>
+        <a th:href="@{/user/changepw}" class="header-link">Cambia password</a>
         ·
-        <form th:action="@{/logout}" method="post" style="display:inline;background:none;border:0;padding:0;margin:0;">
-            <button type="submit" style="background:transparent;border:0;padding:0;margin:0;color:#e8f0f9;text-decoration:underline;cursor:pointer;">Esci</button>
+        <form th:action="@{/logout}" method="post" class="inline-form">
+            <button type="submit" class="inline-button">Esci</button>
         </form>
     </span>
     <span class="utente" sec:authorize="!isAuthenticated()">
-        <a th:href="@{/login}" style="color:#e8f0f9;">Accedi</a>
+        <a th:href="@{/login}" class="header-link">Accedi</a>
     </span>
 </header>
 
@@ -49,24 +50,7 @@
     <span th:text="${alert}">messaggio</span>
 </div>
 
-<!-- Helper AJAX: aggiunge l'header CSRF a fetch/XHR. -->
-<script th:fragment="script-csrf">
-    window.dpCsrf = (function () {
-        var token = document.querySelector('meta[name="_csrf"]');
-        var header = document.querySelector('meta[name="_csrf_header"]');
-        return {
-            header: header ? header.getAttribute('content') : 'X-CSRF-TOKEN',
-            token: token ? token.getAttribute('content') : '',
-            fetch: function (url, options) {
-                options = options || {};
-                options.method = options.method || 'POST';
-                options.headers = options.headers || {};
-                if (this.token) { options.headers[this.header] = this.token; }
-                return fetch(url, options);
-            }
-        };
-    })();
-</script>
+<!-- window.dpCsrf è fornito da /js/app.js (CSP: niente script inline). -->
 
 </body>
 </html>

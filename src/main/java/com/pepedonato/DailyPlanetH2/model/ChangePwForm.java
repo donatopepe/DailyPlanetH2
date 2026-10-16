@@ -14,6 +14,9 @@ import jakarta.validation.constraints.Size;
  */
 public class ChangePwForm {
 
+    /** Identificativo dell'account target (usato solo dall'area amministratore). */
+    private Long id;
+
     private String username;
 
     private String password;
@@ -22,6 +25,16 @@ public class ChangePwForm {
     @Size(min = 8, message = "Your password must at least 8 characters")
     private String new_password;
     private String confirm_password;
+
+    /** @return identificativo dell'account target */
+    public Long getId() {
+        return id;
+    }
+
+    /** @param id identificativo dell'account target */
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     /**
      * @return the username

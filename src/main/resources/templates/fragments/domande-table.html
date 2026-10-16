@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<!--
+  Frammento riutilizzabile: tabella delle domande di lavoro.
+  Usato dalla pagina completa "listdomande" e disponibile come frammento per eventuali
+  il frammento si chiama fragments/domande-table :: resultsList.
+-->
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="resultsList">
+    <table>
+        <thead>
+        <tr>
+            <th>Id</th><th>Titolo</th><th>Autore</th><th>Categorie</th>
+            <th>Stato</th><th>Ultima modifica</th><th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="d : ${domande}">
+            <td th:text="${d.id}">1</td>
+            <td th:text="${d.titolo}">titolo</td>
+            <td th:text="${d.user != null ? d.user.username : ''}">autore</td>
+            <td>
+                <span class="badge" th:each="c : ${d.categorie}" th:text="${c.nome}">categoria</span>
+            </td>
+            <td>
+                <span class="badge" th:if="${d.closed}">chiusa</span>
+                <span class="badge" th:unless="${d.closed}">aperta</span>
+            </td>
+            <td th:text="${d.datamodifica}">data</td>
+            <td><a th:href="@{'/user/domanda/' + ${d.id}}">apri</a></td>
+        </tr>
+        <tr th:if="${domande == null or #lists.isEmpty(domande)}">
+            <td colspan="7">Nessuna domanda trovata.</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

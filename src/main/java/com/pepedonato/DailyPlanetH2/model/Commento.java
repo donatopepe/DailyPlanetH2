@@ -39,7 +39,7 @@ public class Commento implements Serializable {
     @Column
     private Timestamp datamodifica;
 
-    @Column(nullable = false, columnDefinition="LONGTEXT")
+    @Column(nullable = false, length = 10000)
     @NotNull(message = "Name cannot be null")
     @Size(min = 8, message = "Your description must at least 8 characters")
     private String descrizione;
