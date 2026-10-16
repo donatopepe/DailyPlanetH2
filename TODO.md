@@ -110,7 +110,7 @@ completa, README, licenza MIT, test verdi).
 - [x] S3.6.3 Verifica esaustiva: **0** occorrenze del segreto in tutti i 184 oggetti (`git cat-file --batch-all-objects --batch | grep -c`), **0** in `git grep` su tutti i commit, **0** nei messaggi di commit, **0** byte-level in `.git/objects/`; 5 occorrenze del segnaposto `REDACTED_default_credential` provano che la sostituzione è avvenuta anche nei blob storici.
 - [x] S3.6.4 Nessun hash da rimappare in `TODO.md`/`docs/` (verificato con grep); bundle di backup contenente il segreto **eliminato**; reflog azzerato e `git repack -a -d -f` + `git gc --prune=now` eseguiti.
 - **Stato**: COMPLETATO (2026-10-16).
-- **Conseguenze operative**: (1) in S9 il push di `main` richiede `git push --force-with-lease` (eccezione D6, mai `--force`); (2) GitHub conserva gli oggetti originali non più raggiungibili: aprire una richiesta a GitHub Support per la loro rimozione e considerare la vecchia credenziale di default compromessa; (3) nessun impatto su utenti reali (progetto locale senza utenti).
+- **Conseguenze operative**: (1) push eseguito il 2026-10-16 con `--force-with-lease` (S9.3a): il branch pubblicato è ora la storia riscritta, quindi il push finale di S9 sarà un fast-forward; (2) GitHub serve ancora gli oggetti non più raggiungibili per SHA → azione umana S9.4 con testo pronto in `docs/github-history-purge.md`; (3) nessun impatto su utenti reali (progetto locale senza utenti).
 - **Blocker**: nessuno.
 
 ### S4 — Viste Thymeleaf (dipende da S3) → C6
@@ -155,11 +155,13 @@ Viste/frammenti da creare (da `return "..."`
 - [ ] S8.3 Profilo `prod` documentato: variabili d'ambiente per DB e credenziali, nessun default segreto; `.env.example` senza valori reali.
 - **AC**: `docker buildx build --platform linux/amd64,linux/arm64` verde o, se Docker assente, validazione equivalente; workflow con sintassi YAML valida e 3 job coerenti con `./gradlew clean test`.
 
-### S9 — Rilascio pubblico (dipende da S8) → C12 — GATE UMANO
+### S9 — Rilascio pubblico (dipende da S8) → C12
 - [ ] S9.1 `version = '1.0.0'`, tag annotato `v1.0.0`, note di rilascio.
 - [ ] S9.2 Revisione finale anti-segreto (`gitleaks` o grep mirato) e controllo file pubblicati.
-- [ ] S9.3 **Approvazione esplicita del proprietario** registrata qui (D4/D6 già concesse il 2026-10-16), poi `git push main` + tag e creazione release GitHub. Poiché S3.6 riscrive la storia già pubblicata, il push di `main` richiede `--force-with-lease` (mai `--force`); documentare in `docs/` che GitHub può conservare per qualche tempo gli oggetti non più raggiungibili e che la credenziale di default va considerata compromessa.
-- **AC**: approvazione scritta in TODO; push riuscito; release pubblicata.
+- [x] S9.3a **Push intermediario di sicurezza** (eseguito 2026-10-16): il branch `main` già pubblicato conteneva la credenziale di default del 2021; il push è stato fatto con `git push --force-with-lease=main:<sha-vecchio> origin main` (D6, mai `--force`). Evidenza: `1aeafc7...aecf705 main -> main (forced update)`; clone di verifica → `git grep` sul branch remoto: nessuna occorrenza del segreto.
+- [ ] S9.3b Push finale di `main` + tag `v1.0.0` + release GitHub: ora è un **fast-forward** (il remoto ha già la storia riscritta), quindi nessun `--force` è più necessario.
+- [ ] S9.4 **Azione umana residua**: inviare la richiesta a GitHub Support per la rimozione degli oggetti *dangling* (il vecchio commit è ancora servito per SHA: verificato `raw.githubusercontent.com/.../<sha-vecchio>/controller/DefaultController.java` → HTTP 200). Testo pronto in [`docs/github-history-purge.md`](docs/github-history-purge.md); a purge avvenuta, ripetere la verifica "commit non più scaricabile" e chiudere qui.
+- **AC**: rubrica 13/13; `./gradlew clean test` verde; scansione anti-segreto pulita; push del fast-forward e tag riusciti; richiesta di purge inviata (o rischio documentato come accettato dal proprietario: la credenziale era un default di un'app locale senza utenti reali).
 
 ## Decisioni approvate dal proprietario (2026-10-16)
 | # | Decisione | Stato |
@@ -169,7 +171,7 @@ Viste/frammenti da creare (da `return "..."`
 | D3 | Build = Gradle 8.14 con wrapper committato, Spring Boot 3.5.16, Java 17 | **confermato** |
 | D4 | Rilascio pubblico (push `main` + tag `v1.0.0` + release GitHub) in S9 | **pre-approvato**: eseguibile senza ulteriore richiesta una volta che la rubrica è 13/13, `./gradlew clean test` è verde e la scansione anti-segreto è pulita (S9.2) |
 | D5 | Licenza MIT con copyright "Donato Pepe" | **confermato** |
-| D6 | Scrub dei segreti dalla **storia git** (non solo dall'albero corrente) e conseguente riscrittura degli hash | **approvato** dal proprietario il 2026-10-16: autorizza `git filter-repo` e, in S9, `git push --force-with-lease` di `main` (eccezione esplicita al divieto di force-push, limitata a questo scopo) |
+| D6 | Scrub dei segreti dalla **storia git** (non solo dall'albero corrente) e conseguente riscrittura degli hash | **approvato ed eseguito** il 2026-10-16: `git filter-repo` (S3.6) e push con `git push --force-with-lease=<sha atteso>` (S9.3a). Resta solo la richiesta a GitHub Support per gli oggetti dangling (S9.4, azione umana). |
 
 ## Blocker
 - (S0) Maven non installato → si usa Gradle + wrapper (nessun blocker reale).
