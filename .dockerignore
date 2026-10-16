@@ -1,0 +1,22 @@
+# Contesto di build ridotto: l'immagine compila dai sorgenti, non serve altro.
+.git
+.gitignore
+.gitattributes
+.github
+build
+.gradle
+data
+docs
+*.md
+!README.md
+.env
+.env.*
+!.env.example
+*.h2.db
+*.mv.db
+*.log
+.idea
+*.iml
+.vscode
+.codegraph
+.pi-loop.json*

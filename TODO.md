@@ -172,10 +172,14 @@ Viste/frammenti da creare (da `return "..."`
 - **Blocker**: nessuno.
 
 ### S8 — Distribuzione (dipende da S7) → C11, C13 (parziale)
-- [ ] S8.1 `Dockerfile` multi-stage **multi-architettura** (linux/amd64 + linux/arm64, buildx) + `docker-compose.yml` (app + PostgreSQL con volume).
-- [ ] S8.2 GitHub Actions `.github/workflows/ci.yml`: **matrix OS** `ubuntu-latest` / `windows-latest` / `macos-latest` con Java 17 e `shell: bash` per i passi Gradle (parità col comando `./gradlew`), build + test su push/PR.
-- [ ] S8.3 Profilo `prod` documentato: variabili d'ambiente per DB e credenziali, nessun default segreto; `.env.example` senza valori reali.
-- **AC**: `docker buildx build --platform linux/amd64,linux/arm64` verde o, se Docker assente, validazione equivalente; workflow con sintassi YAML valida e 3 job coerenti con `./gradlew clean test`.
+- [x] S8.1 `Dockerfile` multi-stage + `docker-compose.yml` (app + PostgreSQL 17 con volume e healthcheck) + `.dockerignore` + `.env.example` (solo segnaposto). Immagine di esecuzione **non root**, healthcheck del container su `/actuator/health`, profilo `prod` predefinito.
+- [x] S8.2 GitHub Actions `.github/workflows/ci.yml`: job `test` con **matrix OS** `ubuntu-latest`/`windows-latest`/`macos-latest` (Java 17 temurin, `shell: bash` per usare lo stesso `./gradlew` su tutti i sistemi, upload del report) + job `docker-multiarch` con QEMU + buildx su `linux/amd64,linux/arm64` senza push.
+- [x] S8.3 Profilo `prod` documentato (README EN/IT + `docs/`), `.env.example` con segnaposto, nessun default segreto; `.env` in `.gitignore`.
+- **Stato**: PARZIALE (2026-10-16) — artefatti completi e verificati fin dove l'ambiente lo consente.
+- **Evidenza (eseguita davvero)**: `docker compose --env-file .env.example config` → configurazione valida (servizi `app` + `db`, dipendenza `service_healthy`, porte, variabili); `docker build -t dailyplaneth2:test .` → **Successfully built** (18 step, fase build con cache delle dipendenze Gradle, fase runtime con JDK 17 JRE non root); `docker manifest inspect eclipse-temurin:17-jdk-jammy | 17-jre-jammy | postgres:17-alpine` → **amd64 + arm64 presenti** (premessa multi-architettura verificata); validazione YAML di `.github/workflows/ci.yml` e `docker-compose.yml` → file validi, matrix `ubuntu-latest, windows-latest, macos-latest`, `platforms: linux/amd64,linux/arm64`, `shell: bash` presente.
+- **BLOCKER (ambientale, non del progetto)**: la radice del filesystem di questa macchina è **al 100%** (`/dev/nvme0n1p2 107G usati 102G, disponibili ~102MB`). Conseguenze provate: (a) `docker compose up` → `initdb: error: could not create directory "/var/lib/postgresql/data/pg_wal": No space left on device` (PostgreSQL non si inizializza, quindi lo stack completo non è verificabile); (b) `docker run … SPRING_PROFILES_ACTIVE=dev` sull'immagine costruita → `org.h2.message.DbException: Error while creating file "/app/data"` (il container non riesce a scrivere il proprio layer). Tentativi effettuati: `docker compose down -v`, rimozione delle immagini create (`dailyplaneth2:test`, `dailyplaneth2:1.0.0-SNAPSHOT`), `docker image prune -f` (recuperati 647MB ma quasi tutti layer condivisi preesistenti) → disponibile risalito solo a ~102MB, insufficiente per inizializzare il cluster PostgreSQL (~100-200MB). Non è stato cancellato nulla di altri progetti: immagini, volumi e container di terze parti sono rimasti intatti.
+- **Secondo gap dichiarato**: `docker buildx` **non è installato** su questa macchina (plugin assente, non un difetto del progetto) → la build multi-architettura locale non è eseguibile; è coperta dal job `docker-multiarch` della CI e documentata nel README.
+- **Per chiudere S8.1**: liberare almeno ~1GB sulla radice, poi `docker compose --env-file .env.example up -d --build` + verifica `/actuator/health` e login; in alternativa la CI esegue test su 3 OS e la build multi-architettura a ogni push.
 
 ### S9 — Rilascio pubblico (dipende da S8) → C12
 - [ ] S9.1 `version = '1.0.0'`, tag annotato `v1.0.0`, note di rilascio.
@@ -201,4 +205,4 @@ Viste/frammenti da creare (da `return "..."`
 - (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 13/13, test verdi, nessun segreto).
 
 ## Prossimo passo immediato
-S8.1 → S8.3 (distribuzione: `Dockerfile` multi-stage multi-architettura, `docker-compose` con PostgreSQL, workflow CI con matrix Linux/macOS/Windows).
+S9.1 → S9.4 (rilascio: versione 1.0.0, tag annotato, note di rilascio, scansione anti-segreto finale, push `main` (fast-forward) + tag e release GitHub; restano aperti il blocker ambientale del disco per la verifica compose e la richiesta umana a GitHub Support per gli oggetti dangling).

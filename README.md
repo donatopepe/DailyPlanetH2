@@ -218,7 +218,7 @@ gradlew.bat clean test         # Windows
 
 HTML report: `build/reports/tests/test/index.html`.
 
-## Build and run as a jar
+## Build, run as a jar and with Docker
 
 ```bash
 ./gradlew clean build
@@ -226,6 +226,42 @@ java -jar build/libs/DailyPlanetH2-1.0.0-SNAPSHOT.jar --spring.profiles.active=d
 ```
 
 Health endpoint (public, no authentication): `GET /actuator/health` → `{"status":"UP"}`.
+
+### Docker
+
+Prerequisites: Docker with the Compose v2 plugin.
+
+```bash
+cp .env.example .env      # then edit the values (passwords are mandatory)
+docker compose up --build  # app on http://localhost:8080 + PostgreSQL
+docker compose down        # add -v to drop the database volume as well
+```
+
+What the stack does:
+
+- `db`: PostgreSQL 17 with a named volume (`db-data`) and a `pg_isready` healthcheck;
+- `app`: image built from `Dockerfile`, `SPRING_PROFILES_ACTIVE=prod`, database and seed
+  credentials injected from `.env`, container healthcheck on `/actuator/health`;
+- startup order: the app waits for the database to become healthy;
+- no default passwords anywhere: if a variable is missing, Compose stops with an explicit
+  message and the application refuses to start (see `ProductionEnvironmentValidator`).
+
+Single image:
+
+```bash
+docker build -t dailyplaneth2:1.0.0-SNAPSHOT .
+docker run --rm -e SPRING_PROFILES_ACTIVE=dev -p 8080:8080 dailyplaneth2:1.0.0-SNAPSHOT
+```
+
+Multi-architecture image (linux/amd64 + linux/arm64) — requires buildx and QEMU:
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 -t dailyplaneth2:1.0.0-SNAPSHOT .
+```
+
+The same build runs in CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)), together
+with the test suite on Linux, macOS and Windows.
+
 
 ## Project structure
 
@@ -262,10 +298,9 @@ TODO.md                      implementation plan, decisions, evidence
 
 ## Roadmap
 
-- Container image (multi-arch) and `docker-compose` with PostgreSQL.
-- CI workflow building and testing on Linux, macOS and Windows.
 - Versioned schema migrations (Flyway/Liquibase).
 - Screenshots and a short demo video in the README.
+- Optional: Keycloak/OIDC login, e-mail notifications on new comments.
 
 ## License
 
