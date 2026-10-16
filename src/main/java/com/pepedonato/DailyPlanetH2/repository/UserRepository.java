@@ -15,7 +15,13 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long>{
+
+   /**
+    * Ritrova un utente per username.
+    *
+    * <p>Non esiste alcun metodo di ricerca per password: le password sono hash BCrypt
+    * e vengono verificate con {@code PasswordEncoder.matches}, mai confrontate in SQL.</p>
+    */
    User findByUsername(String username);
-   User findByUsernameAndPassword(String username,String password);
-      
+
 }

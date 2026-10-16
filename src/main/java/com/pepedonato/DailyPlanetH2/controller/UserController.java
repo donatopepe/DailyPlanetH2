@@ -174,7 +174,9 @@ public class UserController {
 
                 user.setDisabled(userNoPWRule.getDisabled());
 
-                Boolean save = userDetailsService.save(user);
+                // L'utente arriva dal database: la password è già un hash BCrypt.
+                // saveNoPw evita il doppio encoding (difetto della versione originale).
+                Boolean save = userDetailsService.saveNoPw(user);
 
                 if (save) {
                     System.out.println("Ok account salvato");

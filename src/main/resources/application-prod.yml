@@ -1,0 +1,27 @@
+# Profilo di produzione: PostgreSQL, nessun default per host/credenziali.
+# Variabili richieste: DB_URL, DB_USERNAME, DB_PASSWORD, DAILYPLANET_ADMIN_PASSWORD.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+  jpa:
+    hibernate:
+      # Lo schema è gestito da Hibernate; l'introduzione di migrazioni versionate
+      # (Flyway/Liquibase) è tracciata come evoluzione in docs/ (S7.3).
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  h2:
+    console:
+      enabled: false
+
+server:
+  forward-headers-strategy: framework
+
+logging:
+  level:
+    root: INFO
+    com.pepedonato.DailyPlanetH2: INFO

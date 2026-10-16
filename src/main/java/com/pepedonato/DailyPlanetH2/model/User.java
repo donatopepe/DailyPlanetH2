@@ -61,6 +61,13 @@ public class User implements Serializable {
 
     @Column
     private Boolean disabled = false;
+
+    /**
+     * true quando all'utente è richiesto il cambio password al primo accesso
+     * (account creato da seed o da amministratore).
+     */
+    @Column(name = "must_change_password")
+    private Boolean mustChangePassword = false;
     
 
     @OneToMany(orphanRemoval = true)
@@ -151,6 +158,20 @@ public class User implements Serializable {
      */
     public void setDisabled(Boolean disabled) {
         this.disabled = disabled;
+    }
+
+    /**
+     * @return true se all'utente è richiesto il cambio password al primo accesso
+     */
+    public Boolean getMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    /**
+     * @param mustChangePassword true per obbligare il cambio password al prossimo accesso
+     */
+    public void setMustChangePassword(Boolean mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
     }
 
 

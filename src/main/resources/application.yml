@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: DailyPlanetH2
+  profiles:
+    default: dev
+  # Cross-platform: UTF-8 obbligatorio in lettura di properties, template e messaggi.
+  mandatory-file-encoding: UTF-8
+  jpa:
+    open-in-view: false
+  thymeleaf:
+    encoding: UTF-8
+  messages:
+    encoding: UTF-8
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# Account amministratore creato al primo avvio (seed idempotente).
+# La password in produzione è OBBLIGATORIA da variabile d'ambiente: nessun default segreto.
+dailyplanet:
+  admin:
+    username: ${DAILYPLANET_ADMIN_USERNAME:administrator}
+    email: ${DAILYPLANET_ADMIN_EMAIL:admin@example.invalid}
+    password: ${DAILYPLANET_ADMIN_PASSWORD:}
