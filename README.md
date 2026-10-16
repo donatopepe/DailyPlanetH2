@@ -156,7 +156,7 @@ export DB_URL='jdbc:postgresql://localhost:5432/dailyplanet'
 export DB_USERNAME='dailyplanet'
 export DB_PASSWORD='…'
 export DAILYPLANET_ADMIN_PASSWORD='…'
-java -jar build/libs/DailyPlanetH2-1.0.0-SNAPSHOT.jar --spring.profiles.active=prod
+java -jar build/libs/DailyPlanetH2-1.0.0.jar --spring.profiles.active=prod
 ```
 
 The schema is managed by Hibernate (`ddl-auto: update`); versioned migrations
@@ -222,7 +222,7 @@ HTML report: `build/reports/tests/test/index.html`.
 
 ```bash
 ./gradlew clean build
-java -jar build/libs/DailyPlanetH2-1.0.0-SNAPSHOT.jar --spring.profiles.active=dev --server.port=8080
+java -jar build/libs/DailyPlanetH2-1.0.0.jar --spring.profiles.active=dev --server.port=8080
 ```
 
 Health endpoint (public, no authentication): `GET /actuator/health` → `{"status":"UP"}`.
@@ -249,14 +249,14 @@ What the stack does:
 Single image:
 
 ```bash
-docker build -t dailyplaneth2:1.0.0-SNAPSHOT .
-docker run --rm -e SPRING_PROFILES_ACTIVE=dev -p 8080:8080 dailyplaneth2:1.0.0-SNAPSHOT
+docker build -t dailyplaneth2:1.0.0 .
+docker run --rm -e SPRING_PROFILES_ACTIVE=dev -p 8080:8080 dailyplaneth2:1.0.0
 ```
 
 Multi-architecture image (linux/amd64 + linux/arm64) — requires buildx and QEMU:
 
 ```bash
-docker buildx build --platform linux/amd64,linux/arm64 -t dailyplaneth2:1.0.0-SNAPSHOT .
+docker buildx build --platform linux/amd64,linux/arm64 -t dailyplaneth2:1.0.0 .
 ```
 
 The same build runs in CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)), together
