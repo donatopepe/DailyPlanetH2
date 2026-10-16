@@ -4,9 +4,9 @@
 # eclipse-temurin e postgres pubblicano entrambe le architetture.
 #
 # Costruzione:
-#   docker build -t dailyplaneth2:1.0.0-SNAPSHOT .
+#   docker build -t dailyplaneth2:1.0.0 .
 # Multi-architettura (richiede buildx + QEMU):
-#   docker buildx build --platform linux/amd64,linux/arm64 -t dailyplaneth2:1.0.0-SNAPSHOT .
+#   docker buildx build --platform linux/amd64,linux/arm64 -t dailyplaneth2:1.0.0 .
 
 # ---------- fase di build ----------
 FROM eclipse-temurin:17-jdk-jammy AS build
@@ -37,7 +37,7 @@ RUN groupadd --system --gid 1001 app \
     && useradd --system --uid 1001 --gid app --home-dir /app app
 
 WORKDIR /app
-COPY --from=build --chown=app:app /workspace/build/libs/*-SNAPSHOT.jar /app/app.jar
+COPY --from=build --chown=app:app /workspace/build/libs/*.jar /app/app.jar
 
 USER app
 EXPOSE 8080

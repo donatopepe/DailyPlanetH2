@@ -34,7 +34,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: dailyplaneth2:1.0.0-SNAPSHOT
+    image: dailyplaneth2:1.0.0
     depends_on:
       db:
         condition: service_healthy

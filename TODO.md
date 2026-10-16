@@ -29,7 +29,7 @@ completa, README, licenza MIT, test verdi).
 | Nessun segreto/credenziale hardcoded versionato | grep su `password\|secret\|api_key\|token\|jdbc` |
 | Ambiente: Java 17.0.20.1, Gradle 9.8.1, Maven assente, rete verso Maven Central OK | `java -version`, `gradle -v`, `curl -sI` |
 | CodeGraph 1.5.0: indice creato (639 nodi, 1122 edge, 24 file) | `codegraph init/index/status` |
-| Remote pubblico `github.com/donatopepe/DailyPlanetH2`, identity `Donato Pepe <dnt.ppe@gmail.com>` | `git remote -v`, `git config` |
+| Remote pubblico `github.com/donatopepe/DailyPlanetH2`, identity di commit dell'autore (nessun indirizzo riportato in questo file) | `git remote -v`, `git config` |
 
 **Assunzione dichiarata**: il progetto da sistemare è questo repository (cwd
 `/home/public/DailyPlanetH2`); il testo della richiesta indicava genericamente
