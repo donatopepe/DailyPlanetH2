@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<!--
+  Pagina di errore generica richiesta dal meccanismo di gestione errori di Spring Boot
+  (view "error"). Delega al frammento condiviso in error/error.html.
+-->
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Errore · DailyPlanetH2</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+<header class="app-header">
+    <span class="brand">DailyPlanetH2</span>
+</header>
+
+<main>
+    <h1>Si è verificato un errore</h1>
+    <div class="alert error">
+        <p><strong>Stato:</strong> <span th:text="${status}">500</span> — <span th:text="${error}">Errore</span></p>
+        <p th:if="${message != null and message != ''}" th:text="${message}">messaggio</p>
+        <p th:if="${path != null}"><code th:text="${path}">/percorso</code></p>
+    </div>
+    <p><a class="button" th:href="@{/about}">Torna alla pagina iniziale</a></p>
+</main>
+
+<footer class="app-footer"><p>DailyPlanetH2 — portale di gestione ordini di lavoro · licenza MIT</p></footer>
+</body>
+</html>

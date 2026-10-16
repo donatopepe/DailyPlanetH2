@@ -27,7 +27,15 @@ import org.springframework.web.util.HtmlUtils;
 @Table
 public class Categoria implements Serializable {
 
-    @ManyToMany
+    /**
+     * Lato INVERSO dell'associazione con le domande: il lato proprietario è
+     * {@code DomandaLavoro.categorie}. Prima entrambi i lati erano proprietari, con due
+     * tabelle di join duplicate ({@code categoria_domande} e {@code domanda_lavoro_categorie}).
+     *
+     * <p>Le modifiche qui valgono solo in memoria: la persistenza avviene aggiornando
+     * {@code DomandaLavoro.categorie}.</p>
+     */
+    @ManyToMany(mappedBy = "categorie")
     private List<DomandaLavoro> domande;
 
     @Id

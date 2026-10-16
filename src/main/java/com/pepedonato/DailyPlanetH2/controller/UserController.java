@@ -42,6 +42,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
@@ -255,69 +256,82 @@ public class UserController {
         }
 
     }
+    /**
+     * Costruisce il commento da salvare leggendo solo il testo della richiesta.
+     *
+     * <p>Non si fa più il binding diretto dell'entità: su rotte come
+     * {@code /user/doNewCommento/{id}} Spring legherebbe la variabile di percorso
+     * {@code id} al campo {@code id} del {@code Commento}, facendo credere a Hibernate
+     * che si tratti di una riga già esistente (errore "Row was updated or deleted by
+     * another transaction").</p>
+     *
+     * @return il commento, oppure {@code null} se il testo non rispetta il minimo richiesto
+     */
+    private Commento commentoDaRichiesta(String testo, boolean risposta) {
+        if (testo == null || testo.trim().length() < 8) {
+            return null;
+        }
+        Commento commento = new Commento();
+        commento.setDescrizione(testo.trim());
+        commento.setRisposta(risposta);
+        return commento;
+    }
+
+    /** Aggiunge al model i dati della domanda usati dal frammento {@code newcommentoDo}. */
+    private void aggiungiDatiDomanda(Model model, DomandaLavoro domanda) {
+        Long id = domanda.getId();
+        model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id));
+        model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id, Boolean.FALSE));
+        model.addAttribute("risposte", commentoServiceImpl.findByDomandaRisposta(id, Boolean.TRUE));
+        model.addAttribute("domanda", domanda);
+        model.addAttribute("newcomment", new Commento());
+        model.addAttribute("newanswer", new Commento());
+        model.addAttribute("newcommentcomment", new Commento());
+        model.addAttribute("newanswercomment", new Commento());
+    }
 
     @PostMapping(value = "/user/doNewCommento/{id}", produces = {MediaType.TEXT_HTML_VALUE})
-    public String doNewCommento(@PathVariable Long id, @Valid @ModelAttribute("newcomment") Commento commento, BindingResult bindingResult, Model model, HttpServletRequest request) {
-        DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id);
-        if (bindingResult.hasErrors()) {
-            model.addAttribute("alert", "Error Binding");
-            if (loadDomandaLavoroById != null) {
-                model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id));
-                //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
-                model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id, Boolean.FALSE));
-                model.addAttribute("risposte", commentoServiceImpl.findByDomandaRisposta(id, Boolean.TRUE));
-                model.addAttribute("domanda", loadDomandaLavoroById);
-                model.addAttribute("newcomment", commento);
-                model.addAttribute("newanswer", new Commento());
-                model.addAttribute("newcommentcomment", new Commento());
+    public String doNewCommento(@PathVariable Long id,
+                                @RequestParam(name = "descrizione", required = false) String descrizione,
+                                Model model) {
+        DomandaLavoro domanda = domandaServiceImpl.loadDomandaLavoroById(id);
+        Commento commento = commentoDaRichiesta(descrizione, Boolean.FALSE);
 
+        if (commento == null) {
+            model.addAttribute("alert", "Il commento deve avere almeno 8 caratteri");
+            if (domanda != null) {
+                aggiungiDatiDomanda(model, domanda);
                 return "newcommentoDo :: resultsnewcommento";
             }
+            return "redirect:/user";
+        }
 
-        } else {
-
-            if (loadDomandaLavoroById != null) {
-
-                commento.setRisposta(Boolean.FALSE);
-                if (commentoServiceImpl.saveCommentoDomanda(loadDomandaLavoroById.getId(), commento)) {
-                }
-
-            }
+        if (domanda != null) {
+            commentoServiceImpl.saveCommentoDomanda(domanda.getId(), commento);
         }
         return "redirect:/user";
-
     }
 
     @PostMapping(value = "/user/doNewAnswer/{id}", produces = {MediaType.TEXT_HTML_VALUE})
-    public String doNewAnswer(@PathVariable Long id, @Valid @ModelAttribute("newanswer") Commento commento, BindingResult bindingResult, Model model, HttpServletRequest request) {
-        DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id);
-        if (bindingResult.hasErrors()) {
-            model.addAttribute("alert", "Error Binding");
-            if (loadDomandaLavoroById != null) {
-                model.addAttribute("categorie", categoriaServiceImpl.findByDomanda(id));
-                //model.addAttribute("categorie", loadDomandaLavoroById.getCategorie()); //funziona ma non vengono messi in ordine alfabetico
-                model.addAttribute("commenti", commentoServiceImpl.findByDomandaRisposta(id, Boolean.FALSE));
-                model.addAttribute("risposte", commentoServiceImpl.findByDomandaRisposta(id, Boolean.TRUE));
-                model.addAttribute("domanda", loadDomandaLavoroById);
-                model.addAttribute("newcomment", new Commento());
-                model.addAttribute("newanswer", commento);
-                model.addAttribute("newcommentcomment", new Commento());
-                model.addAttribute("newanswercomment", new Commento());
+    public String doNewAnswer(@PathVariable Long id,
+                              @RequestParam(name = "descrizione", required = false) String descrizione,
+                              Model model) {
+        DomandaLavoro domanda = domandaServiceImpl.loadDomandaLavoroById(id);
+        Commento risposta = commentoDaRichiesta(descrizione, Boolean.TRUE);
 
+        if (risposta == null) {
+            model.addAttribute("alert", "La risposta deve avere almeno 8 caratteri");
+            if (domanda != null) {
+                aggiungiDatiDomanda(model, domanda);
                 return "newcommentoDo :: resultsnewcommento";
             }
-        } else {
+            return "redirect:/user";
+        }
 
-            if (loadDomandaLavoroById != null) {
-
-                commento.setRisposta(Boolean.TRUE);
-                if (commentoServiceImpl.saveCommentoDomanda(loadDomandaLavoroById.getId(), commento)) {
-                }
-
-            }
+        if (domanda != null) {
+            commentoServiceImpl.saveCommentoDomanda(domanda.getId(), risposta);
         }
         return "redirect:/user";
-
     }
 
     @PostMapping(value = "/user/doNewCommentoCommento/{id_dom}/{id_com}", produces = {MediaType.TEXT_HTML_VALUE})

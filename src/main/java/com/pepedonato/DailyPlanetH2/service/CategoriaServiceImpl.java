@@ -60,41 +60,48 @@ public class CategoriaServiceImpl {
         }
     }
      */
+    /**
+     * Ritrova o crea la categoria per nome. Se {@code domanda} è indicata aggiorna il lato
+     * proprietario dell'associazione ({@code DomandaLavoro.categorie}), che è l'unico
+     * rilevante per la persistenza.
+     */
     public Categoria saveCategoria(Categoria categoria, DomandaLavoro domanda) {
-        Categoria findByNome = findByNome(categoria.getNome());
-        Categoria save;
-        if (findByNome == null) {
-            categoria.addDomanda(domanda);
-            save = categoriaRepository.save(categoria);
+        Categoria esistente = findByNome(categoria.getNome());
+        Categoria salvata = categoriaRepository.save(esistente != null ? esistente : categoria);
 
-        } else {
-            findByNome.addDomanda(domanda);
-            save = categoriaRepository.save(findByNome);
-        }
-        if (save == null) {
-
-        } else {
-        }
-        return save;
-
-    }
-
-    public List<Categoria> saveCategorie(List<Categoria> categorie, DomandaLavoro domanda) {
-        Boolean success = true;
-
-        for (Categoria categoria2:categoriaRepository.findByDomandeOrderByNomeAsc(domanda)){
-            categoria2.removeDomanda(domanda);
-            
-            if (categoriaRepository.save(categoria2)!=null) {
+        if (domanda != null && salvata != null) {
+            if (domanda.getCategorie() == null) {
+                domanda.setCategorie(new ArrayList<>());
+            }
+            boolean presente = domanda.getCategorie().stream()
+                    .anyMatch(c -> c != null && c.getNome() != null
+                            && c.getNome().equalsIgnoreCase(salvata.getNome()));
+            if (!presente) {
+                domanda.getCategorie().add(salvata);
             }
         }
+        return salvata;
+    }
 
-        /*devo prima rimuovere tutte le categorie associate alla domanda */
-        categorie.forEach((categoria) -> {
-            categorie.set(categorie.indexOf(categoria), saveCategoria(categoria, domanda));
-        });
-
-        return categorie;
+    /**
+     * Persiste (o ritrova) le categorie indicate e ritorna una lista NUOVA.
+     *
+     * <p>La lista di ingresso non viene modificata: la versione precedente usava
+     * {@code List.set(...)} sulla lista del chiamante, causando
+     * {@code UnsupportedOperationException} con liste immutabili.</p>
+     */
+    public List<Categoria> saveCategorie(List<Categoria> categorie, DomandaLavoro domanda) {
+        List<Categoria> risultato = new ArrayList<>();
+        if (categorie == null) {
+            return risultato;
+        }
+        for (Categoria categoria : categorie) {
+            if (categoria == null || categoria.getNome() == null || categoria.getNome().trim().isEmpty()) {
+                continue;
+            }
+            risultato.add(saveCategoria(categoria, null));
+        }
+        return risultato;
     }
 
 }
