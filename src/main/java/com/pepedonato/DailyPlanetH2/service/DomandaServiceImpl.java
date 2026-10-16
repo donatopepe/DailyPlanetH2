@@ -41,7 +41,7 @@ public class DomandaServiceImpl {
     }
 
     private Sort sortBy() {
-        return new Sort(Sort.Direction.DESC, "datamodifica");
+        return Sort.by(Sort.Direction.DESC, "datamodifica");
     }
 
     public DomandaLavoro loadDomandaLavoroById(Long id) {

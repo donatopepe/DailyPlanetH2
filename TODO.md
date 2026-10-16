@@ -82,11 +82,15 @@ completa, README, licenza MIT, test verdi).
 - **Nota**: la normalizzazione EOL dei 23 sorgenti elimina il rischio di diff rumorosi e problemi di fine riga tra Windows (NetBeans 2021) e Unix.
 
 ### S2 — Migrazione framework (dipende da S1) → C3, C4
-- [ ] S2.1 Sostituire import `javax.*` → `jakarta.*` (persistence, validation, servlet).
-- [ ] S2.2 Riscrivere `SpringSecurityConfig` con bean `SecurityFilterChain` + `authorizeHttpRequests`, `requestMatchers`, `formLogin`, `logout`, `accessDeniedHandler` (Spring Security 6).
-- [ ] S2.3 Adeguare repository/service alle API correnti (`Sort.by`, `Optional`).
-- [ ] S2.4 Verificare impatto con `codegraph sync .` + `codegraph explore "security login"`.
-- **AC**: `./gradlew compileJava` verde; `grep -rn "javax\." src/` vuoto; test di contesto (`@SpringBootTest`) carica il contesto.
+- [x] S2.1 Sostituire import `javax.*` → `jakarta.*` (persistence, validation, servlet).
+- [x] S2.2 Riscrivere `SpringSecurityConfig` con bean `SecurityFilterChain` + `authorizeHttpRequests`, `requestMatchers`, `formLogin`, `logout`, `accessDeniedHandler` (Spring Security 6).
+- [x] S2.3 Adeguare repository/service alle API correnti (`Sort.by`, `Optional`).
+- [x] S2.4 Verificare impatto con `codegraph sync .` + `codegraph explore "security login"`.
+- [x] S2.5 Difetti emersi dal test di contesto e corretti: dipendenza circolare `CategoriaServiceImpl` ↔ `DomandaServiceImpl` (rimossa iniettando `DomandaLavoroRepository`), tabella `user` → `users` (parola riservata in H2 2.x e PostgreSQL: fix necessario anche per C13).
+- **Stato**: COMPLETATO (2026-10-16).
+- **Evidenza**: `sed` su tutti gli import → `grep -rn "javax\." src/` → nessun residuo (43 import `jakarta.persistence`, 21 `jakarta.validation`, 7 `jakarta.servlet`); `./gradlew compileJava` → BUILD SUCCESSFUL (prima 142 errori, poi 3 errori `new Sort(...)` risolti in `Sort.by(...)`); `./gradlew test` → BUILD SUCCESSFUL, `tests=1 failures=0 errors=0` (`DailyPlanetH2ApplicationTests.contextLoads`); `codegraph sync .` → Done.
+- **Decisione tecnica (S2.2)**: CSRF **attivo** (default Spring Security 6) al posto del `csrf().disable()` originale; i template di S4 devono usare `th:action` sui form e il meta tag del token per le chiamate AJAX.
+- **Blocker**: nessuno.
 
 ### S3 — Persistenza e credenziali (dipende da S2) → C5
 - [ ] S3.1 `application.yml` (+ `application-dev.yml`, `application-prod.yml`): H2 file in dev, PostgreSQL in prod via env var.
@@ -107,7 +111,8 @@ Viste/frammenti da creare (da `return "..."`
 - [ ] S4.1 Layout + frammenti condivisi + CSS/JS statici minimi (nessun asset di terze parti non licenziato).
 - [ ] S4.2 Pagine admin (5) e utente (8) con form validati e messaggi di errore.
 - [ ] S4.3 Frammenti AJAX coerenti con i `return` dei controller (nomi frammento esatti).
-- **AC**: test MockMvc per ogni rotta GET con utente autorizzato → 200 e view attesa; frammenti resi.
+- [ ] S4.4 CSRF: form con `th:action` (token automatico) e meta tag `<meta name="_csrf">` + header nelle chiamate AJAX (vedi S2.2).
+- **AC**: test MockMvc per ogni rotta GET con utente autorizzato → 200 e view attesa; frammenti resi; nessun POST rifiutato per CSRF nei test dei form.
 
 ### S5 — Pulizia dominio/servizi (dipende da S2) → C7
 - [ ] S5.1 Rimuovere tutti i 137 `System.out.println`, introdurre SLF4J senza dati sensibili.
@@ -158,4 +163,4 @@ Viste/frammenti da creare (da `return "..."`
 - (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 13/13, test verdi, nessun segreto).
 
 ## Prossimo passo immediato
-S2.1 → S2.4 (migrazione `javax.*` → `jakarta.*` + Spring Security 6, con `codegraph sync` e analisi d'impatto): obiettivo primario riportare `./gradlew compileJava` verde.
+S3.1 → S3.5 (persistenza: `application.yml` dev/prod, BCrypt corretto, seed, test `@DataJpaTest` + unit `MyUserDetailsService`).
