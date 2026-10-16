@@ -1,0 +1,26 @@
+# Profilo di sviluppo: database H2 su file in una cartella RELATIVA (cross-platform:
+# nessun path assoluto, funziona su Linux, macOS e Windows senza modifiche).
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/dailyplanet;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+logging:
+  level:
+    com.pepedonato.DailyPlanetH2: DEBUG
+
+# In sviluppo la password di default è volutamente semplice e DOCUMENTATA; al primo
+# accesso l'utente amministratore è comunque obbligato a cambiarla (mustChangePassword).
+dailyplanet:
+  admin:
+    password: ${DAILYPLANET_ADMIN_PASSWORD:admin}

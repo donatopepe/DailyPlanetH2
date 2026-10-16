@@ -1,17 +1,18 @@
 package com.pepedonato.DailyPlanetH2.controller;
 
-import com.pepedonato.DailyPlanetH2.model.User;
-import com.pepedonato.DailyPlanetH2.service.MyUserDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
+/**
+ * Pagine pubbliche.
+ *
+ * <p>La creazione dell'account amministratore iniziale è stata spostata in
+ * {@link com.pepedonato.DailyPlanetH2.config.AdminAccountInitializer}: prima avveniva
+ * qui con credenziali scritte nel codice (credenziale di default rimossa dal repository
+ * e dalla storia git).</p>
+ */
 @Controller
 public class DefaultController {
-
-    @Autowired
-    private MyUserDetailsService userDetailsService;
-    private Boolean controlloadmin = false;
 
     @GetMapping("/403")
     public String error403() {
@@ -20,8 +21,6 @@ public class DefaultController {
 
     @GetMapping("/")
     public String home1() {
-        //   ProveCategoria();
-
         return "about";
     }
 
@@ -32,26 +31,11 @@ public class DefaultController {
 
     @GetMapping("/home")
     public String home() {
-
         return "about";
     }
 
     @GetMapping("/login")
     public String login() {
-        if (!controlloadmin) {
-            if (!userDetailsService.existsUserByUsername("administrator")) {
-                User user = new User();
-                user.setUsername("administrator");
-                user.setPassword("REDACTED_default_credential");
-                user.setFirstname("administrator");
-                user.setLastname("administrator");
-                user.setEmail("admin@example.invalid");
-                user.setUserrole("ADMIN");
-                controlloadmin = userDetailsService.save(user);
-            } else {
-                controlloadmin = true;
-            }
-        }
         return "login";
     }
 
