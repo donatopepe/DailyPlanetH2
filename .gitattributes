@@ -1,0 +1,19 @@
+# Normalizzazione cross-platform dei fine riga e dei file binari.
+# Il repository è sempre in LF; solo gli script Windows vengono convertiti in CRLF al checkout.
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+gradlew text eol=lf
+
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.h2.db binary
+*.mv.db binary

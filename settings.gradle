@@ -1,1 +1,7 @@
+plugins {
+    // Provisioning automatico del JDK 17 su qualunque sistema operativo/architettura
+    // (Linux, macOS Intel/ARM, Windows) quando il toolchain richiesto non è installato.
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.10.0'
+}
+
 rootProject.name = 'DailyPlanetH2'

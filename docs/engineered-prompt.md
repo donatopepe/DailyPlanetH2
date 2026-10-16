@@ -11,9 +11,9 @@ verbatim quando serve rilanciare il lavoro a mano.
 |---|---|
 | Attività | Portare `DailyPlanetH2` da sorgenti legacy 2021 a progetto Spring Boot 3 funzionante, testato, documentato e distribuibile pubblicamente |
 | Deliverable separati | (D1) codice funzionante; (D2) suite di test; (D3) documentazione pubblica (README EN/IT, guida, docs/); (D4) licenza MIT e file di comunità; (D5) artefatti di distribuzione (Docker, CI); (D6) rilascio v1.0.0 — ognuno con la propria AC in `TODO.md` |
-| Metrica | criteri di rubrica soddisfatti / 12 (rubrica in `TODO.md`) |
-| Soglia | 12/12; gate dura `./gradlew clean test` verde e app avviabile |
-| Casi / input | 24 classi nel repo; 36 rotte; 22 viste/frammenti; matrice rotte × ruoli; flussi login/cambio password/CRUD domanda/commento |
+| Metrica | criteri di rubrica soddisfatti / 13 (rubrica in `TODO.md`) |
+| Soglia | 13/13; gate dura `./gradlew clean test` verde e app avviabile |
+| Casi / input | 24 classi nel repo; 36 rotte; 22 viste/frammenti; matrice rotte × ruoli; flussi login/cambio password/CRUD domanda/commento; **3 piattaforme** (Linux/macOS/Windows) per build e test |
 | Ordine | S1 → S2 → S3 → S4/S5 → S6 → S7 → S8 → S9; nessun salto di fase |
 | Baseline | S0: build assente, app non avviabile, 0 test, 0 criteri soddisfatti (0/12) |
 | Percorso diretto | agente principale, tool già disponibili (Gradle 9.8.1 di sistema, Java 17, CodeGraph CLI, git) |
@@ -57,7 +57,7 @@ rispetta le dipendenze, lasciando il repository in stato verde e committato.
 - Se i test non possono girare (build non ancora esistente): dichiaralo come AC parziale,
   esegui la verifica alternativa più forte disponibile (compilazione, lint, `bash -n`,
   validazione sintassi) e registrala come evidenza.
-- Nessun push/tag al di fuori di S9. In S9 il push di `main` + tag `v1.0.0` + release è **pre-approvato dal proprietario** (decisione D4 in `TODO.md`), eseguibile senza ulteriore richiesta solo se: rubrica 12/12, `./gradlew clean test` verde, scansione anti-segreto pulita (S9.2). Mai `--force`, mai modifica della configurazione del remote.
+- Nessun push/tag al di fuori di S9. In S9 il push di `main` + tag `v1.0.0` + release è **pre-approvato dal proprietario** (decisione D4 in `TODO.md`), eseguibile senza ulteriore richiesta solo se: rubrica 13/13, `./gradlew clean test` verde, scansione anti-segreto pulita (S9.2). Mai `--force`, mai modifica della configurazione del remote.
 
 ### Vincoli non negoziabili
 1. Un solo branch `main`, nessun worktree nuovo.
@@ -70,12 +70,17 @@ rispetta le dipendenze, lasciando il repository in stato verde e committato.
 6. Le 22 viste/frammenti Thymeleaf devono mantenere i nomi esatti usati dai `return` dei
    controller (frammenti inclusi, es. `newaccountDo :: results`).
 7. Java 17; Spring Boot 3.5.16; Gradle wrapper 8.14 committato.
+8. **Cross-platform obbligatorio**: ogni modifica deve restare valida su Linux, macOS e Windows.
+   In pratica: nessun path assoluto o separatore hardcoded, UTF-8 su compilazione/test/runtime,
+   fine riga normalizzati (`.gitattributes`), nessuna dipendenza da shell POSIX nel build,
+   comandi documentati in versione `./gradlew` e `gradlew.bat`/PowerShell.
+   Prova richiesta: CI matrix 3 OS (S8.2) e test senza assunzioni di piattaforma (S6.6).
 
 ### Ordine di esecuzione (non saltare fasi)
 `S1` scheletro Gradle → `S2` javax→jakarta + Spring Security 6 → `S3` persistenza e
 password → `S4` viste Thymeleaf → `S5` pulizia dominio/servizi → `S6` suite di test →
 `S7` README/guida/licenza → `S8` Docker + CI → `S9` rilascio pubblico **pre-approvato**
-(decisione D4: nessuna ulteriore richiesta se rubrica 12/12, test verdi, anti-segreto pulito).
+(decisione D4: nessuna ulteriore richiesta se rubrica 13/13, test verdi, anti-segreto pulito).
 
 ### Comandi utili
 ```bash

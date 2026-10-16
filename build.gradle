@@ -37,8 +37,25 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    // Cross-platform: output UTF-8 identico su Linux, macOS e Windows.
+    systemProperty 'file.encoding', 'UTF-8'
     testLogging {
         events 'failed', 'skipped'
         exceptionFormat 'full'
     }
+}
+
+// Cross-platform: compilazione e runner sempre in UTF-8, indipendentemente dalla
+// codifica di default del sistema (su Windows/Java 17 sarebbe la codifica ANSI locale,
+// che romperebbe accenti italiani nei sorgenti, nei template Thymeleaf e nei log).
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(JavaExec).configureEach {
+    systemProperty 'file.encoding', 'UTF-8'
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
 }
