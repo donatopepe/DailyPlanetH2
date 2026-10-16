@@ -93,12 +93,23 @@ completa, README, licenza MIT, test verdi).
 - **Blocker**: nessuno.
 
 ### S3 — Persistenza e credenziali (dipende da S2) → C5
-- [ ] S3.1 `application.yml` (+ `application-dev.yml`, `application-prod.yml`): H2 file in dev, PostgreSQL in prod via env var.
-- [ ] S3.2 Rimuovere `codepasswordindb`: hash BCrypt in salvataggio, confronto via `PasswordEncoder.matches` in login e cambio password.
-- [ ] S3.3 Seed iniziale `data.sql`/`DataInitializer`: admin con password da variabile d'ambiente, primo accesso con cambio password forzato.
-- [ ] S3.4 Test: `@DataJpaTest` repository + unit `MyUserDetailsService` (login OK, password errata, utente disabilitato, cambio password).
-- [ ] S3.5 **Cross-platform**: nessun path assoluto o separatore hardcoded; H2 in posizione relativa alla working directory; `spring.mandatory-file-encoding=UTF-8`; `data.sql` in UTF-8 senza BOM; date/ora con `ZoneId` esplicito.
-- **AC**: test S3 verdi; nessuna password in chiaro in DB (verifica su dump H2); `grep -rnE '([A-Za-z]:\\\\|/home/|/Users/|/tmp/)' src/main` vuoto.
+- [x] S3.1 `application.yml` (+ `application-dev.yml`, `application-prod.yml`): H2 file in dev, PostgreSQL in prod via env var.
+- [x] S3.2 Rimuovere `codepasswordindb`: hash BCrypt in salvataggio, confronto via `PasswordEncoder.matches` in login e cambio password.
+- [x] S3.3 Seed iniziale `data.sql`/`DataInitializer`: admin con password da variabile d'ambiente, primo accesso con cambio password forzato.
+- [x] S3.4 Test: `@DataJpaTest` repository + unit `MyUserDetailsService` (login OK, password errata, utente disabilitato, cambio password).
+- [x] S3.5 **Cross-platform**: nessun path assoluto o separatore hardcoded; H2 in posizione relativa alla working directory; `spring.mandatory-file-encoding=UTF-8`; `data.sql` in UTF-8 senza BOM; date/ora con `ZoneId` esplicito.
+- **Stato**: COMPLETATO (2026-10-16).
+- **Evidenza**: `./gradlew clean test` → BUILD SUCCESSFUL, **tests=15 skipped=0 failures=0 errors=0** (`AdminAccountInitializerTest`, `DailyPlanetH2ApplicationTests`, `UserRepositoryTest`, `MyUserDetailsServiceTest`); H2 dev in `./data/dailyplanet` (path relativo, `AUTO_SERVER=TRUE`); profilo `prod` senza default per `DB_URL`/`DB_USERNAME`/`DB_PASSWORD`; seed fail-fast verificato da test su profilo `prod` simulato; `grep -rn "javax\." src/` vuoto.
+- **Difetti corretti**: doppio encode all'autenticazione; password salvate in chiaro; `findByUsernameAndPassword` (confronto in chiaro in SQL) rimosso; credenziale di default scritta nel codice rimossa; `save()` su utente già hashato in `doEditUser` → `saveNoPw`; `System.out` con password eliminati (restano 105 print non sensibili, target S5.1).
+- **Cross-check residuo**: `grep -rnE '([A-Za-z]:\\\\|/home/|/Users/|/tmp/)' src/main` → nessun path assoluto (da rieseguire in S7/S9).
+- **Blocker**: nessuno.
+
+### S3.6 — Scrub dei segreti dalla storia git (dipende da S3) → C10 addendum — approvato dal proprietario
+- [ ] S3.6.1 Regole di sostituzione per la credenziale di default presente nei commit 2021 (`user.setPassword("REDACTED_default_credential")`).
+- [ ] S3.6.2 Riscrittura con `git filter-repo --replace-text` (tool disponibile in `/usr/local/bin/git-filter-repo`) su tutta la storia.
+- [ ] S3.6.3 Verifica: scansione di **tutti** i commit (`git rev-list --all` + grep di pattern di segreti) e conferma che la stringa non esiste più in nessun blob raggiungibile.
+- [ ] S3.6.4 Rimappatura degli hash citati in `TODO.md`/memoria e nota sul force-push richiesto in S9 (`--force-with-lease`, mai `--force`).
+- **AC**: nessun segreto in nessun commit raggiungibile; `git remote` ripristinato; albero di lavoro invariato.
 
 ### S4 — Viste Thymeleaf (dipende da S3) → C6
 Viste/frammenti da creare (da `return "..."`
@@ -145,7 +156,7 @@ Viste/frammenti da creare (da `return "..."`
 ### S9 — Rilascio pubblico (dipende da S8) → C12 — GATE UMANO
 - [ ] S9.1 `version = '1.0.0'`, tag annotato `v1.0.0`, note di rilascio.
 - [ ] S9.2 Revisione finale anti-segreto (`gitleaks` o grep mirato) e controllo file pubblicati.
-- [ ] S9.3 **Approvazione esplicita del proprietario** registrata qui, poi `git push` di `main` + tag e creazione release GitHub.
+- [ ] S9.3 **Approvazione esplicita del proprietario** registrata qui (D4/D6 già concesse il 2026-10-16), poi `git push main` + tag e creazione release GitHub. Poiché S3.6 riscrive la storia già pubblicata, il push di `main` richiede `--force-with-lease` (mai `--force`); documentare in `docs/` che GitHub può conservare per qualche tempo gli oggetti non più raggiungibili e che la credenziale di default va considerata compromessa.
 - **AC**: approvazione scritta in TODO; push riuscito; release pubblicata.
 
 ## Decisioni approvate dal proprietario (2026-10-16)
@@ -156,6 +167,7 @@ Viste/frammenti da creare (da `return "..."`
 | D3 | Build = Gradle 8.14 con wrapper committato, Spring Boot 3.5.16, Java 17 | **confermato** |
 | D4 | Rilascio pubblico (push `main` + tag `v1.0.0` + release GitHub) in S9 | **pre-approvato**: eseguibile senza ulteriore richiesta una volta che la rubrica è 13/13, `./gradlew clean test` è verde e la scansione anti-segreto è pulita (S9.2) |
 | D5 | Licenza MIT con copyright "Donato Pepe" | **confermato** |
+| D6 | Scrub dei segreti dalla **storia git** (non solo dall'albero corrente) e conseguente riscrittura degli hash | **approvato** dal proprietario il 2026-10-16: autorizza `git filter-repo` e, in S9, `git push --force-with-lease` di `main` (eccezione esplicita al divieto di force-push, limitata a questo scopo) |
 
 ## Blocker
 - (S0) Maven non installato → si usa Gradle + wrapper (nessun blocker reale).
@@ -163,4 +175,4 @@ Viste/frammenti da creare (da `return "..."`
 - (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 13/13, test verdi, nessun segreto).
 
 ## Prossimo passo immediato
-S3.1 → S3.5 (persistenza: `application.yml` dev/prod, BCrypt corretto, seed, test `@DataJpaTest` + unit `MyUserDetailsService`).
+S3.6.1 → S3.6.4 (scrub della storia: la credenziale di default `REDACTED_default_credential` introdotta nei commit del 2021 deve sparire da tutti i blob raggiungibili), poi S4 (viste Thymeleaf).

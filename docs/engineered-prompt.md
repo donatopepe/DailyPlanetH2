@@ -57,7 +57,7 @@ rispetta le dipendenze, lasciando il repository in stato verde e committato.
 - Se i test non possono girare (build non ancora esistente): dichiaralo come AC parziale,
   esegui la verifica alternativa più forte disponibile (compilazione, lint, `bash -n`,
   validazione sintassi) e registrala come evidenza.
-- Nessun push/tag al di fuori di S9. In S9 il push di `main` + tag `v1.0.0` + release è **pre-approvato dal proprietario** (decisione D4 in `TODO.md`), eseguibile senza ulteriore richiesta solo se: rubrica 13/13, `./gradlew clean test` verde, scansione anti-segreto pulita (S9.2). Mai `--force`, mai modifica della configurazione del remote.
+- Nessun push/tag al di fuori di S9. In S9 il push di `main` + tag `v1.0.0` + release è **pre-approvato dal proprietario** (decisione D4 in `TODO.md`), eseguibile senza ulteriore richiesta solo se: rubrica 13/13, `./gradlew clean test` verde, scansione anti-segreto pulita (S9.2). Mai `--force`. **Unica eccezione (D6)**: dopo lo scrub della storia (S3.6) il push di `main` richiede `git push --force-with-lease` (mai `--force`), senza altre modifiche alla configurazione del remote.
 
 ### Vincoli non negoziabili
 1. Un solo branch `main`, nessun worktree nuovo.
@@ -114,8 +114,7 @@ Prossimo task: S<a>.<b>
   architettura non richiesta. Invia il report finale e proponi la cancellazione del loop.
 
 ### Anti-pattern da evitare
-- Riscrivere il progetto da zero invece di migrarlo.
-- "Modernizzare" senza test che lo dimostrino.
+- Riscrivere il progetto da zero invece di migrarlo.- "Modernizzare" senza test che lo dimostrino.
 - Aggiungere dipendenze non necessarie (lombok, mapstruct, flyway) senza registrare
   la scelta e il motivo in `TODO.md`.
 - Dichiurare "funzionante" qualcosa che non è stato eseguito.
