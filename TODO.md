@@ -104,12 +104,14 @@ completa, README, licenza MIT, test verdi).
 - **Cross-check residuo**: `grep -rnE '([A-Za-z]:\\\\|/home/|/Users/|/tmp/)' src/main` → nessun path assoluto (da rieseguire in S7/S9).
 - **Blocker**: nessuno.
 
-### S3.6 — Scrub dei segreti dalla storia git (dipende da S3) → C10 addendum — approvato dal proprietario
-- [ ] S3.6.1 Regole di sostituzione per la credenziale di default presente nei commit 2021 (la riga di assegnazione della password di default negli script di seed (valore non riportato)).
-- [ ] S3.6.2 Riscrittura con `git filter-repo --replace-text` (tool disponibile in `/usr/local/bin/git-filter-repo`) su tutta la storia.
-- [ ] S3.6.3 Verifica: scansione di **tutti** i commit (`git rev-list --all` + grep di pattern di segreti) e conferma che la stringa non esiste più in nessun blob raggiungibile.
-- [ ] S3.6.4 Rimappatura degli hash citati in `TODO.md`/memoria e nota sul force-push richiesto in S9 (`--force-with-lease`, mai `--force`).
-- **AC**: nessun segreto in nessun commit raggiungibile; `git remote` ripristinato; albero di lavoro invariato.
+### S3.6 — Scrub dei segreti dalla storia git (dipende da S3) → C10 addendum — approvato dal proprietario [D6]
+- [x] S3.6.1 Regole di sostituzione per la credenziale di default dei commit 2021 (`/tmp/scrub-rules.txt` per i blob, `/tmp/scrub-messages.txt` per i messaggi; valori non riportati in questo file).
+- [x] S3.6.2 Riscrittura completa con `git filter-repo --replace-text ... --replace-message ... --force`: 9 commit riscritti in 0,22 s, repack e clean automatici; `origin` rimosso dal tool e **ripristinato** a mano.
+- [x] S3.6.3 Verifica esaustiva: **0** occorrenze del segreto in tutti i 184 oggetti (`git cat-file --batch-all-objects --batch | grep -c`), **0** in `git grep` su tutti i commit, **0** nei messaggi di commit, **0** byte-level in `.git/objects/`; 5 occorrenze del segnaposto `REDACTED_default_credential` provano che la sostituzione è avvenuta anche nei blob storici.
+- [x] S3.6.4 Nessun hash da rimappare in `TODO.md`/`docs/` (verificato con grep); bundle di backup contenente il segreto **eliminato**; reflog azzerato e `git repack -a -d -f` + `git gc --prune=now` eseguiti.
+- **Stato**: COMPLETATO (2026-10-16).
+- **Conseguenze operative**: (1) in S9 il push di `main` richiede `git push --force-with-lease` (eccezione D6, mai `--force`); (2) GitHub conserva gli oggetti originali non più raggiungibili: aprire una richiesta a GitHub Support per la loro rimozione e considerare la vecchia credenziale di default compromessa; (3) nessun impatto su utenti reali (progetto locale senza utenti).
+- **Blocker**: nessuno.
 
 ### S4 — Viste Thymeleaf (dipende da S3) → C6
 Viste/frammenti da creare (da `return "..."`
@@ -175,4 +177,4 @@ Viste/frammenti da creare (da `return "..."`
 - (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 13/13, test verdi, nessun segreto).
 
 ## Prossimo passo immediato
-S3.6.1 → S3.6.4 (scrub della storia: la coppia di credenziali di default introdotta nei commit del 2021 (valori non più riportati) deve sparire da tutti i blob raggiungibili), poi S4 (viste Thymeleaf).
+S4.1 → S4.4 (viste Thymeleaf: layout, 22 viste/frammenti, CSRF nei form e nelle chiamate AJAX).
