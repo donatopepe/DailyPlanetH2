@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layouts/main :: head('Modifica account')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Modifica il tuo account</h1>
+
+    <form th:action="@{/user/doEditUser}" th:object="${userNoPWRule}" method="post">
+        <input type="hidden" th:field="*{id}"/>
+
+        <label for="username">Nome utente</label>
+        <input type="text" id="username" th:field="*{username}" required="required"/>
+        <div class="errore-campo" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">errore</div>
+
+        <label for="firstname">Nome</label>
+        <input type="text" id="firstname" th:field="*{firstname}" required="required"/>
+        <div class="errore-campo" th:if="${#fields.hasErrors('firstname')}" th:errors="*{firstname}">errore</div>
+
+        <label for="lastname">Cognome</label>
+        <input type="text" id="lastname" th:field="*{lastname}" required="required"/>
+        <div class="errore-campo" th:if="${#fields.hasErrors('lastname')}" th:errors="*{lastname}">errore</div>
+
+        <label for="email">Email</label>
+        <input type="email" id="email" th:field="*{email}" required="required"/>
+        <div class="errore-campo" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">errore</div>
+
+        <button type="submit">Salva</button>
+        <a class="button" th:href="@{/user}">Annulla</a>
+    </form>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
+</html>

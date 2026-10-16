@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<!-- Frammento di risposta per il salvataggio account (risposta AJAX / rendering parziale). -->
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="results">
+    <div class="alert" th:classappend="${alert == null or #strings.startsWith(alert, 'Account Saved')} ? 'ok' : 'error'"
+         th:if="${alert != null}">
+        <span th:text="${alert}">esito</span>
+    </div>
+</div>
+</body>
+</html>

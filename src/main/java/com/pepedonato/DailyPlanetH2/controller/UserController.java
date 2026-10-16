@@ -88,10 +88,12 @@ public class UserController {
 
     @GetMapping("/user/changepw")
     public ModelAndView changepw(ModelAndView mav) {
-        //ModelAndView mav = new ModelAndView();
+        String name = SecurityContextHolder.getContext().getAuthentication().getName();
         ChangePwForm changePwForm = new ChangePwForm();
-        changePwForm.setUsername(SecurityContextHolder.getContext().getAuthentication().getName());
+        changePwForm.setUsername(name);
         mav.addObject("ChangePwForm", changePwForm);
+        // true quando l'accesso e' forzato dall'interceptor (mustChangePassword)
+        mav.addObject("forzato", userDetailsService.isPasswordChangeRequired(name));
 
         mav.setViewName("changepw");
 
@@ -112,7 +114,7 @@ public class UserController {
 
         if (ChangePassword) {
             System.out.println("Cambio Password eseguito");
-            mav.setViewName("redirectuser");
+            mav.setViewName("redirect:/user");
             mav.addObject("alert", "Change password successfully");
             return mav;
         } else {
@@ -181,7 +183,7 @@ public class UserController {
                 if (save) {
                     System.out.println("Ok account salvato");
                     model.addAttribute("alert", "Account Saved");
-                    return "redirectuser";
+                    return "redirect:/user";
                 } else {
                     System.out.println("Account non salvato");
                     model.addAttribute("alert", "Account not Saved");
@@ -265,7 +267,7 @@ public class UserController {
 
     }
 
-    @PostMapping(value = "/user/doNewCommento/{id}", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(value = "/user/doNewCommento/{id}", produces = {MediaType.TEXT_HTML_VALUE})
     public String doNewCommento(@PathVariable Long id, @Valid @ModelAttribute("newcomment") Commento commento, BindingResult bindingResult, Model model, HttpServletRequest request) {
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id);
         if (bindingResult.hasErrors()) {
@@ -297,11 +299,11 @@ public class UserController {
 
             }
         }
-        return "redirectuser";
+        return "redirect:/user";
 
     }
 
-    @PostMapping(value = "/user/doNewAnswer/{id}", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(value = "/user/doNewAnswer/{id}", produces = {MediaType.TEXT_HTML_VALUE})
     public String doNewAnswer(@PathVariable Long id, @Valid @ModelAttribute("newanswer") Commento commento, BindingResult bindingResult, Model model, HttpServletRequest request) {
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id);
         if (bindingResult.hasErrors()) {
@@ -333,11 +335,11 @@ public class UserController {
 
             }
         }
-        return "redirectuser";
+        return "redirect:/user";
 
     }
 
-    @PostMapping(value = "/user/doNewCommentoCommento/{id_dom}/{id_com}", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(value = "/user/doNewCommentoCommento/{id_dom}/{id_com}", produces = {MediaType.TEXT_HTML_VALUE})
     public String doNewCommentoCommento(@PathVariable("id_dom") Long id_dom, @PathVariable("id_com") Long id_com, @Valid @ModelAttribute("newcommentcomment") Commento commento, BindingResult bindingResult, Model model, HttpServletRequest request) {
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id_dom);
         Commento loadCommentoById = commentoServiceImpl.loadCommentoById(id_com);
@@ -371,11 +373,11 @@ public class UserController {
 
             }
         }
-        return "redirectuser";
+        return "redirect:/user";
 
     }
 
-    @PostMapping(value = "/user/editcommentocommento/{id_dom}/{id_com}", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(value = "/user/editcommentocommento/{id_dom}/{id_com}", produces = {MediaType.TEXT_HTML_VALUE})
     public String editcommentocommento(@PathVariable("id_dom") Long id_dom, @PathVariable("id_com") Long id_com, @Valid @ModelAttribute("newcommentcomment") Commento commento, BindingResult bindingResult, Model model, HttpServletRequest request) {
         DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id_dom);
         Commento loadCommentoById = commentoServiceImpl.loadCommentoById(id_com);
@@ -430,7 +432,7 @@ public class UserController {
     }
 
 //    @RequestMapping(value = "/user/doNewDomanda", method = RequestMethod.POST, params = "action=Save Category")
-    @PostMapping(value = "/user/doNewDomanda/SaveCategory", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(value = "/user/doNewDomanda/SaveCategory", produces = {MediaType.TEXT_HTML_VALUE})
     public String doSaveCategoria(@Valid @ModelAttribute("domanda") DomandaView domanda, BindingResult bindingResult, Model model, HttpServletRequest request) {
 
         /*
@@ -478,7 +480,7 @@ public class UserController {
 
     }
 
-    @PostMapping(value = "/user/doNewDomanda/SaveQuestion", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(value = "/user/doNewDomanda/SaveQuestion", produces = {MediaType.TEXT_HTML_VALUE})
     public String doNewDomanda(@Valid @ModelAttribute("domanda") DomandaView domanda, BindingResult bindingResult, Model model, HttpServletRequest request) throws Exception {
 
         if (bindingResult.hasErrors()) {
@@ -513,7 +515,7 @@ public class UserController {
                 if (domandaServiceImpl.saveDomandaLavoro(domandalavoro)) {
                     System.out.println("Salvataggio domanda eseguito con successo");
                     model.addAttribute("alert", "Save success");
-                    return "redirectuser";
+                    return "redirect:/user";
                 } else {
                     System.out.println("Slavataggio domanda non eseguito");
                     model.addAttribute("alert", "Save Error");
@@ -532,7 +534,7 @@ public class UserController {
         return "newdomandaDo :: resultsnewdomanda";
     }
 
-    @PostMapping(value = "/user/doNewDomanda/DelCategory", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(value = "/user/doNewDomanda/DelCategory", produces = {MediaType.TEXT_HTML_VALUE})
     public String doDelCategoria(@Valid @ModelAttribute("domanda") DomandaView domanda, BindingResult bindingResult, Model model, HttpServletRequest request) {
 
         System.out.println("Aggiungi domanda>: " + domanda.getTitolo());

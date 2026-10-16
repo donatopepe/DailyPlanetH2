@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layouts/main :: head('Nuova domanda di lavoro')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Nuova domanda di lavoro</h1>
+
+    <form id="form-domanda" th:object="${domanda}" method="post"
+          th:action="@{/user/doNewDomanda/SaveQuestion}">
+        <input type="hidden" th:field="*{id_domanda}"/>
+
+        <label for="titolo">Titolo</label>
+        <input type="text" id="titolo" th:field="*{titolo}" required="required" maxlength="120"/>
+
+        <label for="descrizione">Descrizione</label>
+        <textarea id="descrizione" th:field="*{descrizione}" rows="4"></textarea>
+
+        <label for="categoria">Categoria da associare</label>
+        <select id="categoria" th:field="*{categoria}">
+            <option value="">— seleziona —</option>
+            <option th:each="c : ${allCategorie}" th:value="${c}" th:text="${c}">categoria</option>
+        </select>
+
+        <label>
+            <input type="checkbox" th:field="*{closed}"/> domanda chiusa
+        </label>
+
+        <button type="submit">Salva domanda</button>
+        <a class="button" th:href="@{/user}">Annulla</a>
+    </form>
+
+    <div id="esito"></div>
+</main>
+
+<script th:replace="~{layouts/main :: script-csrf}"></script>
+<script>
+    // Invio AJAX delle domande (il controller risponde con il frammento resultsnewdomanda).
+    document.getElementById('form-domanda').addEventListener('submit', function (event) {
+        event.preventDefault();
+        var form = event.target;
+        window.dpCsrf.fetch(form.action, {body: new URLSearchParams(new FormData(form))})
+            .then(function (r) { return r.text(); })
+            .then(function (html) { document.getElementById('esito').innerHTML = html; });
+    });
+</script>
+</body>
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</html>

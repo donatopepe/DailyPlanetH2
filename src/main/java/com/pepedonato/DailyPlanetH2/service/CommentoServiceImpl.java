@@ -36,8 +36,9 @@ public class CommentoServiceImpl {
     }
 
     public Commento loadCommentoById(Long id) {
-        Optional<Commento> findById = commentoRepository.findById(id);
-        return findById.get();
+        // Ritorna null se il commento non esiste: prima Optional.get() causava
+        // NoSuchElementException (errore 500) sulle rotte con id non valido.
+        return commentoRepository.findById(id).orElse(null);
     }
 
     public List<Commento> findByDomandaRisposta(Long domanda_id, Boolean risposta) {
@@ -51,8 +52,11 @@ public class CommentoServiceImpl {
     }
 
     public List<Commento> findByCommento(Long commento_id) {
-
-        return commentoRepository.findByCommentoOrderByDatamodificaAsc(this.loadCommentoById(commento_id));
+        Commento commento = this.loadCommentoById(commento_id);
+        if (commento == null) {
+            return java.util.Collections.emptyList();
+        }
+        return commentoRepository.findByCommentoOrderByDatamodificaAsc(commento);
     }
 
     public Boolean saveCommentoDomanda(Long domanda_id, Commento commento) {

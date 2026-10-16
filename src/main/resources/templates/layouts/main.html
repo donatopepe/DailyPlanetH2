@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<!--
+  Frammenti condivisi: head, navigazione, footer, messaggi di esito.
+  Il token CSRF è disponibile sia nei form (th:action lo inserisce da solo) sia
+  alle chiamate AJAX tramite il meta tag "_csrf" e il frammento "script-csrf".
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:fragment="head(titolo)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${titolo} + ' · DailyPlanetH2'">DailyPlanetH2</title>
+    <meta name="_csrf" th:content="${_csrf.token}" th:if="${_csrf != null}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" th:if="${_csrf != null}"/>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+
+<body>
+
+<header class="app-header" th:fragment="nav">
+    <span class="brand"><a th:href="@{/about}" style="color:#fff;text-decoration:none;">DailyPlanetH2</a></span>
+    <nav>
+        <a th:href="@{/about}">Informazioni</a>
+        <a sec:authorize="hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')" th:href="@{/user}">Area utente</a>
+        <a sec:authorize="hasAuthority('ROLE_ADMIN')" th:href="@{/admin}">Area amministratore</a>
+    </nav>
+    <span class="spacer"></span>
+    <span class="utente" sec:authorize="isAuthenticated()">
+        <span th:text="${#authentication.name}">utente</span>
+        ·
+        <a th:href="@{/user/changepw}" style="color:#e8f0f9;">Cambia password</a>
+        ·
+        <form th:action="@{/logout}" method="post" style="display:inline;background:none;border:0;padding:0;margin:0;">
+            <button type="submit" style="background:transparent;border:0;padding:0;margin:0;color:#e8f0f9;text-decoration:underline;cursor:pointer;">Esci</button>
+        </form>
+    </span>
+    <span class="utente" sec:authorize="!isAuthenticated()">
+        <a th:href="@{/login}" style="color:#e8f0f9;">Accedi</a>
+    </span>
+</header>
+
+<footer class="app-footer" th:fragment="footer">
+    <p>DailyPlanetH2 — portale di gestione ordini di lavoro · licenza MIT</p>
+</footer>
+
+<!-- Frammento riutilizzabile per le risposte AJAX: mostra il messaggio se presente. -->
+<div th:fragment="esito" class="alert" th:classappend="${alert != null} ? 'ok' : ''" th:if="${alert != null}">
+    <span th:text="${alert}">messaggio</span>
+</div>
+
+<!-- Helper AJAX: aggiunge l'header CSRF a fetch/XHR. -->
+<script th:fragment="script-csrf">
+    window.dpCsrf = (function () {
+        var token = document.querySelector('meta[name="_csrf"]');
+        var header = document.querySelector('meta[name="_csrf_header"]');
+        return {
+            header: header ? header.getAttribute('content') : 'X-CSRF-TOKEN',
+            token: token ? token.getAttribute('content') : '',
+            fetch: function (url, options) {
+                options = options || {};
+                options.method = options.method || 'POST';
+                options.headers = options.headers || {};
+                if (this.token) { options.headers[this.header] = this.token; }
+                return fetch(url, options);
+            }
+        };
+    })();
+</script>
+
+</body>
+</html>

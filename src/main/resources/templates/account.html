@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layouts/main :: head('Elenco account')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Elenco account</h1>
+    <p><a class="button" th:href="@{/admin/newaccount}">Nuovo account</a></p>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Id</th><th>Nome utente</th><th>Nome</th><th>Cognome</th>
+            <th>Email</th><th>Ruolo</th><th>Stato</th><th>Azioni</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="u : ${listaUser}">
+            <td th:text="${u.id}">1</td>
+            <td th:text="${u.username}">utente</td>
+            <td th:text="${u.firstname}">Nome</td>
+            <td th:text="${u.lastname}">Cognome</td>
+            <td th:text="${u.email}">email</td>
+            <td th:text="${u.userrole}">USER</td>
+            <td>
+                <span class="badge" th:if="${u.disabled}">disabilitato</span>
+                <span class="badge" th:unless="${u.disabled}">attivo</span>
+            </td>
+            <td>
+                <a th:href="@{'/admin/edit/' + ${u.id}}">modifica</a> ·
+                <a th:href="@{'/admin/changepw/' + ${u.id}}">password</a>
+            </td>
+        </tr>
+        <tr th:if="${listaUser == null or #lists.isEmpty(listaUser)}">
+            <td colspan="8">Nessun account presente.</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
+</html>

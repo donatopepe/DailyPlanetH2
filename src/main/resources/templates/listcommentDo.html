@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<!-- Frammento: elenco commenti di una domanda. -->
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="results">
+    <table>
+        <thead><tr><th>Id</th><th>Autore</th><th>Commento</th><th>Risposta</th></tr></thead>
+        <tbody>
+        <tr th:each="c : ${commentiper}">
+            <td th:text="${c.id}">1</td>
+            <td th:text="${c.user != null ? c.user.username : ''}">autore</td>
+            <td th:text="${c.descrizione}">commento</td>
+            <td th:text="${c.risposta != null and c.risposta} ? 'sì' : ''">risposta</td>
+        </tr>
+        <tr th:if="${commentiper == null or #lists.isEmpty(commentiper)}">
+            <td colspan="4">Nessun commento per la domanda <span th:text="${commento_id}">0</span>.</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

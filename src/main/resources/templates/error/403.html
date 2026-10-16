@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layouts/main :: head('Accesso negato')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Accesso negato (403)</h1>
+    <div class="alert error">
+        Non hai i permessi necessari per accedere a questa sezione.
+    </div>
+    <p>
+        <a class="button" th:href="@{/about}">Torna alla pagina iniziale</a>
+    </p>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
+</html>

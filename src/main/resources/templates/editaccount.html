@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layouts/main :: head('Modifica account')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Modifica account</h1>
+
+    <form th:action="@{/admin/doEditAccount}" th:object="${userNoPW}" method="post">
+        <input type="hidden" th:field="*{id}"/>
+
+        <label for="username">Nome utente</label>
+        <input type="text" id="username" th:field="*{username}" required="required"/>
+
+        <label for="firstname">Nome</label>
+        <input type="text" id="firstname" th:field="*{firstname}" required="required"/>
+
+        <label for="lastname">Cognome</label>
+        <input type="text" id="lastname" th:field="*{lastname}" required="required"/>
+
+        <label for="email">Email</label>
+        <input type="email" id="email" th:field="*{email}" required="required"/>
+
+        <label for="userrole">Ruolo</label>
+        <select id="userrole" th:field="*{userrole}">
+            <option value="USER">USER</option>
+            <option value="ADMIN">ADMIN</option>
+        </select>
+
+        <label>
+            <input type="checkbox" th:field="*{disabled}"/> disabilitato
+        </label>
+
+        <button type="submit">Salva</button>
+        <a class="button" th:href="@{/admin/account}">Annulla</a>
+    </form>
+
+    <p><a th:href="@{'/admin/changepw/' + ${userNoPW.id}}">Reimposta la password di questo account</a></p>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
+</html>
