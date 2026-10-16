@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layouts/main :: head('Area amministratore')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Area amministratore</h1>
+    <div class="card">
+        <h2>Gestione</h2>
+        <ul>
+            <li><a th:href="@{/admin/account}">Elenco account</a></li>
+            <li><a th:href="@{/admin/newaccount}">Nuovo account</a></li>
+        </ul>
+    </div>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
+</html>

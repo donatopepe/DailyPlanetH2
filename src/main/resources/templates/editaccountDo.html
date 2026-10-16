@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<!-- Frammento di risposta alla modifica account. -->
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="results">
+    <div class="alert ok" th:if="${alert != null}">
+        <span th:text="${alert}">esito</span>
+    </div>
+</div>
+</body>
+</html>

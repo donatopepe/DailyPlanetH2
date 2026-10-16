@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layouts/main :: head('Accesso')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Accesso</h1>
+
+    <div class="alert error" th:if="${param.error != null}">Credenziali non valide oppure utente disabilitato.</div>
+    <div class="alert ok" th:if="${param.logout != null}">Sessione chiusa correttamente.</div>
+
+    <form th:action="@{/login}" method="post">
+        <label for="username">Nome utente</label>
+        <input type="text" id="username" name="username" required="required" autofocus="autofocus"/>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required="required"/>
+
+        <button type="submit">Accedi</button>
+    </form>
+
+    <p style="font-size:0.9rem;">
+        Primo avvio: l'account amministratore è creato dal seed configurato
+        (<code>DAILYPLANET_ADMIN_USERNAME</code> / <code>DAILYPLANET_ADMIN_PASSWORD</code>).
+        Al primo accesso il cambio password è obbligatorio.
+    </p>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
+</html>

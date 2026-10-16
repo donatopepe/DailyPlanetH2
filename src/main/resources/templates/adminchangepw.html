@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layouts/main :: head('Reimposta password')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Reimposta password</h1>
+    <p>Account: <strong th:text="${ChangePwForm.username}">utente</strong></p>
+
+    <form th:action="@{/admin/doAdminChangepw}" th:object="${ChangePwForm}" method="post">
+        <input type="hidden" th:field="*{username}"/>
+
+        <label for="new_password">Nuova password</label>
+        <input type="password" id="new_password" th:field="*{new_password}" required="required"/>
+        <div class="errore-campo" th:if="${#fields.hasErrors('new_password')}" th:errors="*{new_password}">errore</div>
+
+        <label for="confirm_password">Conferma nuova password</label>
+        <input type="password" id="confirm_password" th:field="*{confirm_password}" required="required"/>
+
+        <button type="submit">Reimposta</button>
+        <a class="button" th:href="@{/admin/account}">Annulla</a>
+    </form>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
+</html>

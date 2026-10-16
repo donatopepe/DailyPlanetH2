@@ -121,11 +121,15 @@ Viste/frammenti da creare (da `return "..."`
 `user`, `edituser`, `edituserDo :: results`, `newdomanda`, `newdomandaDo :: resultsnewdomanda`,
 `domanda`, `listdomande :: resultsList`, `newcommentoDo :: resultsnewcommento`, `listcommentDo :: results`,
 `editcommento`, `editrisposta`.
-- [ ] S4.1 Layout + frammenti condivisi + CSS/JS statici minimi (nessun asset di terze parti non licenziato).
-- [ ] S4.2 Pagine admin (5) e utente (8) con form validati e messaggi di errore.
-- [ ] S4.3 Frammenti AJAX coerenti con i `return` dei controller (nomi frammento esatti).
-- [ ] S4.4 CSRF: form con `th:action` (token automatico) e meta tag `<meta name="_csrf">` + header nelle chiamate AJAX (vedi S2.2).
-- **AC**: test MockMvc per ogni rotta GET con utente autorizzato → 200 e view attesa; frammenti resi; nessun POST rifiutato per CSRF nei test dei form.
+- [x] S4.1 Layout + frammenti condivisi + CSS/JS statici minimi (nessun asset di terze parti non licenziato).
+- [x] S4.2 Pagine admin (5) e utente (8) con form validati e messaggi di errore.
+- [x] S4.3 Frammenti AJAX coerenti con i `return` dei controller (nomi frammento esatti).
+- [x] S4.4 CSRF: form con `th:action` (token automatico) e meta tag `<meta name="_csrf">` + header nelle chiamate AJAX (vedi S2.2).
+- **Stato**: COMPLETATO (2026-10-16).
+- **Evidenza**: 20 file `.html` in `src/main/resources/templates` + `static/css/app.css`; `./gradlew clean test` → **tests=26 skipped=0 failures=0 errors=0** (incluse 11 prove di rendering reale in `ViewRenderingTest`); avvio reale con profilo `dev` su porta 18080 → `Tomcat started`, `GET /login` 200, `GET /about` 200, `GET /user` anonimo 302 → `/login`, `GET /css/app.css` 200, pagina login renderizzata con meta `_csrf`; seed amministratore idempotente (`nessuna azione.` al secondo avvio).
+- **Difetti corretti (e relative cause)**: (1) `Commento.domanda`/`Commento.commento` erano `@OneToOne` → vincolo unique impediva più commenti per domanda: ora `@ManyToOne`; (2) `LazyInitializationException` su `DomandaLavoro.categorie` con `open-in-view: false` → `@EntityGraph` sui repository di domande e commenti; (3) `Optional.get()` in `DomandaServiceImpl` e `CommentoServiceImpl` → `orElse(null)` (era errore 500 su id inesistente); (4) view ritornate `"redirectuser"`/`"redirectaccount"` (non esistenti) → `redirect:/user` e `redirect:/admin/account`; (5) endpoint AJAX che rendevano frammenti HTML dichiarando `produces=application/json` → `text/html`; (6) `allUser` è una lista di username (non di entità): template adeguato.
+- **Nota per S5**: la rotta `/user/listcommenti/{id}` riceve in realtà un id di commento (il nome del parametro è fuorviante) — da chiarire nella pulizia dei servizi.
+- **Blocker**: nessuno.
 
 ### S5 — Pulizia dominio/servizi (dipende da S2) → C7
 - [ ] S5.1 Rimuovere tutti i 137 `System.out.println`, introdurre SLF4J senza dati sensibili.
@@ -179,4 +183,4 @@ Viste/frammenti da creare (da `return "..."`
 - (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 13/13, test verdi, nessun segreto).
 
 ## Prossimo passo immediato
-S4.1 → S4.4 (viste Thymeleaf: layout, 22 viste/frammenti, CSRF nei form e nelle chiamate AJAX).
+S5.1 → S5.3 (pulizia dominio/servizi: rimozione dei 105 `System.out`, stato statico di `ChangePwForm`, gestione errori centralizzata, semantica di `/user/listcommenti/{id}`).

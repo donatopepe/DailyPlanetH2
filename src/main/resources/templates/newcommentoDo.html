@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<!-- Frammento di risposta al salvataggio di un commento. -->
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="resultsnewcommento">
+    <div class="alert" th:classappend="${alert == null or #strings.startsWith(alert, 'Comment Saved')} ? 'ok' : 'error'"
+         th:if="${alert != null}">
+        <span th:text="${alert}">esito</span>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layouts/main :: head('Informazioni')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>DailyPlanetH2</h1>
+    <p>
+        Portale di gestione degli <strong>ordini di lavoro</strong>: apertura e
+        classificazione delle domande, commenti e risposte, categorie, gestione degli
+        account e delle password.
+    </p>
+
+    <div class="card" sec:authorize="!isAuthenticated()">
+        <h2>Accesso</h2>
+        <p>Per usare il portale è necessario autenticarsi.</p>
+        <a class="button" th:href="@{/login}">Accedi</a>
+    </div>
+
+    <div class="card" sec:authorize="isAuthenticated()">
+        <h2>Vai a</h2>
+        <p>
+            <a class="button" th:href="@{/user}">Area utente</a>
+            <a class="button" sec:authorize="hasAuthority('ROLE_ADMIN')" th:href="@{/admin}">Area amministratore</a>
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>Ruoli</h2>
+        <ul>
+            <li><span class="badge">ROLE_USER</span> gestisce le proprie domande e i relativi commenti;</li>
+            <li><span class="badge">ROLE_ADMIN</span> gestisce gli account, le password e vede tutte le domande.</li>
+        </ul>
+    </div>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
+</html>

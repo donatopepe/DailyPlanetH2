@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layouts/main :: head('Area utente')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Area utente</h1>
+
+    <div class="card">
+        <h2>Azioni</h2>
+        <p>
+            <a class="button" th:href="@{/user/newdomanda}">Nuova domanda di lavoro</a>
+            <a class="button" th:href="@{/user/edituser}">Modifica il tuo account</a>
+            <a class="button" th:href="@{/user/changepw}">Cambia password</a>
+            <a class="button" th:href="@{/user/listdomande}">Tutte le domande</a>
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>Filtri</h2>
+        <form th:action="@{/user/listdomande/category/__CATEGORIA__}" method="get" style="background:none;border:0;padding:0;"
+              onsubmit="this.action = this.action.replace('__CATEGORIA__', encodeURIComponent(this.categoria.value));">
+            <label for="categoria">Domande per categoria</label>
+            <select id="categoria" name="categoria">
+                <option th:each="c : ${allCategorie}" th:value="${c}" th:text="${c}">categoria</option>
+            </select>
+            <button type="submit">Filtra per categoria</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Utenti</h2>
+        <table>
+            <thead><tr><th>Nome utente</th></tr></thead>
+            <tbody>
+            <tr th:each="u : ${allUser}">
+                <td th:text="${u}">utente</td>
+            </tr>
+            <tr th:if="${allUser == null or #lists.isEmpty(allUser)}">
+                <td colspan="1">Nessun utente.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
+</html>

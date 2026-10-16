@@ -13,7 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
+
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -47,10 +47,12 @@ public class Commento implements Serializable {
     @Column
     private Boolean risposta;       //se true non è un commento alla domanda ma una risposta
 
-    @OneToOne
+    /** Commento genitore: popolato solo quando questa riga e' una risposta (risposta=true). */
+    @ManyToOne
     private Commento commento;
 
-    @OneToOne
+    /** Una domanda puo' avere molti commenti: il vincolo @OneToOne impediva piu' commenti. */
+    @ManyToOne
     private DomandaLavoro domanda;
 
     public void setDatacreazioneNow() {

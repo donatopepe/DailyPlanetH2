@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layouts/main :: head('Nuovo account')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Nuovo account</h1>
+
+    <form th:action="@{/admin/doSaveAccount}" th:object="${user}" method="post">
+        <label for="username">Nome utente</label>
+        <input type="text" id="username" th:field="*{username}" required="required"/>
+        <div class="errore-campo" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">errore</div>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" th:field="*{password}" required="required"/>
+        <div class="errore-campo" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">errore</div>
+
+        <label for="firstname">Nome</label>
+        <input type="text" id="firstname" th:field="*{firstname}" required="required"/>
+        <div class="errore-campo" th:if="${#fields.hasErrors('firstname')}" th:errors="*{firstname}">errore</div>
+
+        <label for="lastname">Cognome</label>
+        <input type="text" id="lastname" th:field="*{lastname}" required="required"/>
+        <div class="errore-campo" th:if="${#fields.hasErrors('lastname')}" th:errors="*{lastname}">errore</div>
+
+        <label for="email">Email</label>
+        <input type="email" id="email" th:field="*{email}" required="required"/>
+        <div class="errore-campo" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">errore</div>
+
+        <label for="userrole">Ruolo</label>
+        <select id="userrole" th:field="*{userrole}">
+            <option value="USER">USER</option>
+            <option value="ADMIN">ADMIN</option>
+        </select>
+
+        <label>
+            <input type="checkbox" th:field="*{disabled}"/> disabilitato
+        </label>
+
+        <button type="submit">Salva</button>
+        <a class="button" th:href="@{/admin/account}">Annulla</a>
+    </form>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
+</html>

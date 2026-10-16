@@ -18,12 +18,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Verifica la gestione delle password: hash BCrypt in scrittura e verifica con
  * {@code matches} in lettura, cambio password, utenti disabilitati.
  */
 @SpringBootTest
+@Transactional
 class MyUserDetailsServiceTest {
 
     private static final String RAW_PASSWORD = "password-robusta-1";

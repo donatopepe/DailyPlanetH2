@@ -148,7 +148,7 @@ public class AdminController {
             if (save) {
                 System.out.println("Ok Password salvato");
                 model.addAttribute("alert", "Password Saved");
-                return "redirectaccount";
+                return "redirect:/admin/account";
             } else {
                 System.out.println("Password non salvato");
                 model.addAttribute("alert", "Password not Saved");
@@ -188,7 +188,7 @@ public class AdminController {
                 if (save) {
                     System.out.println("Ok account salvato");
                     model.addAttribute("alert", "Account Saved");
-                    return "redirectaccount";
+                    return "redirect:/admin/account";
                 } else {
                     System.out.println("Account non salvato");
                     model.addAttribute("alert", "Account not Saved");

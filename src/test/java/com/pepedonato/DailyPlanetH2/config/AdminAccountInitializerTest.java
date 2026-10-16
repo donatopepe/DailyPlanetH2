@@ -21,12 +21,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Verifica il seed dell'account amministratore: password da configurazione,
  * hash BCrypt, obbligo di cambio password, idempotenza e blocco in produzione.
  */
 @SpringBootTest(properties = "dailyplanet.admin.password=seme-iniziale-1")
+@Transactional
 class AdminAccountInitializerTest {
 
     @Autowired

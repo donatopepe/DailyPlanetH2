@@ -45,8 +45,9 @@ public class DomandaServiceImpl {
     }
 
     public DomandaLavoro loadDomandaLavoroById(Long id) {
-        Optional<DomandaLavoro> findById = domandaLavoroRepository.findById(id);
-        return findById.get();
+        // Ritorna null se la domanda non esiste: i controller verificano il null
+        // (prima Optional.get() causava NoSuchElementException -> errore 500).
+        return domandaLavoroRepository.findById(id).orElse(null);
     }
 
     public List<DomandaLavoro> findByUser(String name) {

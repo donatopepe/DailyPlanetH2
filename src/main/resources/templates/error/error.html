@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layouts/main :: head('Errore')}"></head>
+<body>
+<header th:replace="~{layouts/main :: nav}"></header>
+
+<main>
+    <h1>Si è verificato un errore</h1>
+    <div class="alert error">
+        <p><strong>Stato:</strong> <span th:text="${status}">500</span> — <span th:text="${error}">Errore</span></p>
+        <p th:if="${message != null}" th:text="${message}">messaggio</p>
+        <p th:if="${path != null}"><code th:text="${path}">/percorso</code></p>
+    </div>
+    <p>
+        <a class="button" th:href="@{/about}">Torna alla pagina iniziale</a>
+    </p>
+</main>
+
+<footer th:replace="~{layouts/main :: footer}"></footer>
+</body>
+</html>

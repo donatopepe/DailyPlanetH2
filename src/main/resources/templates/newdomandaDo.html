@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<!-- Frammento di risposta al salvataggio di una domanda di lavoro. -->
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="resultsnewdomanda">
+    <div class="alert ok" th:if="${alert != null}">
+        <span th:text="${alert}">esito</span>
+    </div>
+    <div class="card" th:if="${domanda != null and domanda.titolo != null and domanda.id_domanda != null}">
+        <p>Domanda salvata: <strong th:text="${domanda.titolo}">titolo</strong></p>
+        <a class="button" th:href="@{'/user/domanda/' + ${domanda.id_domanda}}">Apri la domanda</a>
+    </div>
+</div>
+</body>
+</html>
