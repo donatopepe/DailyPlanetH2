@@ -161,11 +161,15 @@ Viste/frammenti da creare (da `return "..."`
 - **Blocker**: nessuno.
 
 ### S7 — Documentazione (dipende da S4, S6) → C9, C10
-- [ ] S7.1 `README.md` (EN) e `README.it.md` (IT): descrizione, feature, stack, requisiti, installazione, configurazione, esecuzione dev/prod, test, ruoli e flussi, deploy Docker, troubleshooting, struttura repo, screenshot.
-- [ ] S7.2 `LICENSE` MIT (© Donato Pepe), `CHANGELOG.md` (Keep a Changelog), `CONTRIBUTING.md`, `.editorconfig`.
-- [ ] S7.3 `docs/`: architettura, modello dati (ER), guida utente per ruolo, note di migrazione da Spring Boot 2 a 3.
-- [ ] S7.4 **Istruzioni per sistema operativo** nel README (EN e IT): Linux/macOS (`./gradlew`), Windows PowerShell/cmd (`gradlew.bat`, `$env:VAR` vs `set VAR`), tabella di comandi equivalenti, nota su UTF-8 e normalizzazione dei fine riga (`.gitattributes`), opzione Docker come percorso uniforme.
-- **AC**: ogni comando del README eseguito per davvero e verificato; link interni validi; per ogni OS esiste un percorso di avvio completo (dev e test).
+- [x] S7.1 `README.md` (EN) e `README.it.md` (IT): descrizione, funzionalità, stack, requisiti, avvio rapido, configurazione, database, ruoli e flussi, tabella rotte, test, build/jar, struttura, troubleshooting, roadmap. La sezione Docker arriva in S8 (non si documentano comandi inesistenti).
+- [x] S7.2 `LICENSE` MIT (© Donato Pepe), `CHANGELOG.md` (Keep a Changelog, nessun link a tag inesistenti), `CONTRIBUTING.md`, `.editorconfig`.
+- [x] S7.3 `docs/`: `architecture.md`, `data-model.md` (ER + regole di integrità), `user-guide.md` (per ruolo), `migration-spring-boot-2-to-3.md` (incluso script di migrazione dati).
+- [x] S7.4 **Istruzioni per sistema operativo**: comandi equivalenti Linux/macOS (`./gradlew`), Windows PowerShell (`$env:VAR`) e cmd (`set VAR`, `gradlew.bat`); nota su UTF-8, `.gitattributes` e percorsi relativi del database.
+- **Stato**: COMPLETATO (2026-10-16).
+- **Evidenza comandi eseguiti davvero**: `./gradlew clean test` → BUILD SUCCESSFUL, **tests=59 failures=0**; `./gradlew clean build` → BUILD SUCCESSFUL con `build/libs/DailyPlanetH2-1.0.0-SNAPSHOT.jar` (nome verificato e usato nei comandi del README); `java -jar … --spring.profiles.active=dev --server.port=18085` → `GET /actuator/health` **200 `{"status":"UP"}`**, `GET /login` **200**, H2 creato nel percorso **relativo** `/tmp/devcheck2/data/dailyplanet.mv.db` (prova del cross-platform dei percorsi); profilo `prod` senza variabili → **exit 1** con `IllegalStateException: Profilo 'prod': variabili d'ambiente obbligatorie mancanti: DB_URL, DB_USERNAME, DB_PASSWORD, DAILYPLANET_ADMIN_PASSWORD…`; profilo `prod` con datasource valido ma senza password admin → `IllegalStateException: DAILYPLANET_ADMIN_PASSWORD non impostata…`.
+- **Correzioni nate dalla verifica dei comandi documentati**: (1) `/actuator/health` richiedeva autenticazione (302) mentre il README lo documentava come endpoint di salute → ora pubblico insieme a `/actuator/info`; (2) un `DB_URL` mancante in produzione falliva con un messaggio oscuro di Hibernate → nuovo `ProductionEnvironmentValidator` (`EnvironmentPostProcessor`) che elenca le variabili mancanti **prima** dell'avvio del contesto, con 4 test dedicati.
+- **Limiti dichiarati**: il successo dell'avvio in `prod` con PostgreSQL non è verificabile su questa macchina (nessun server PostgreSQL né Docker in questa fase); verrà coperto in S8.1 con `docker-compose`. Il comando `git clone` non è stato eseguito (repository già presente) e i comandi Windows non sono eseguibili qui: prova prevista in S8.2 (CI matrix su tre sistemi).
+- **Blocker**: nessuno.
 
 ### S8 — Distribuzione (dipende da S7) → C11, C13 (parziale)
 - [ ] S8.1 `Dockerfile` multi-stage **multi-architettura** (linux/amd64 + linux/arm64, buildx) + `docker-compose.yml` (app + PostgreSQL con volume).
@@ -197,4 +201,4 @@ Viste/frammenti da creare (da `return "..."`
 - (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 13/13, test verdi, nessun segreto).
 
 ## Prossimo passo immediato
-S7.1 → S7.4 (documentazione: README.md EN + README.it.md, CHANGELOG, CONTRIBUTING, .editorconfig, docs/ tecniche, istruzioni per sistema operativo, nota sulla ricreazione del DB di sviluppo).
+S8.1 → S8.3 (distribuzione: `Dockerfile` multi-stage multi-architettura, `docker-compose` con PostgreSQL, workflow CI con matrix Linux/macOS/Windows).

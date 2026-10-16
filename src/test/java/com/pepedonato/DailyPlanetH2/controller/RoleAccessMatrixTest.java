@@ -73,7 +73,7 @@ class RoleAccessMatrixTest {
         }
     }
 
-    private static final String[] ROTTE_PUBBLICHE = {"/", "/about", "/home", "/login", "/403"};
+    private static final String[] ROTTE_PUBBLICHE = {"/", "/about", "/home", "/login", "/403", "/actuator/health"};
     private static final String[] ROTTE_UTENTE = {"/user", "/user/edituser", "/user/newdomanda", "/user/changepw", "/user/listdomande"};
     private static final String[] ROTTE_ADMIN = {"/admin", "/admin/account", "/admin/newaccount"};
 
