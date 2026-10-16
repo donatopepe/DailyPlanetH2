@@ -217,6 +217,6 @@ public class MyUserDetailsService implements UserDetailsService {
     }
 
     private Sort sortBy() {
-        return new Sort(Sort.Direction.ASC, "lastname");
+        return Sort.by(Sort.Direction.ASC, "lastname");
     }
 }

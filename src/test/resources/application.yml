@@ -1,0 +1,17 @@
+# Profilo di test: database H2 in memoria, nessuna risorsa esterna.
+spring:
+  datasource:
+    url: jdbc:h2:mem:dailyplanet-test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+  mandatory-file-encoding: UTF-8
+
+logging:
+  level:
+    root: WARN
+    com.pepedonato.DailyPlanetH2: INFO

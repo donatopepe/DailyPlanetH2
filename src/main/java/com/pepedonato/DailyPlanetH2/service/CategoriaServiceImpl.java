@@ -8,8 +8,10 @@ package com.pepedonato.DailyPlanetH2.service;
 import com.pepedonato.DailyPlanetH2.model.Categoria;
 import com.pepedonato.DailyPlanetH2.model.DomandaLavoro;
 import com.pepedonato.DailyPlanetH2.repository.CategoriaRepository;
+import com.pepedonato.DailyPlanetH2.repository.DomandaLavoroRepository;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -19,15 +21,18 @@ public class CategoriaServiceImpl {
 
     @Autowired
     private CategoriaRepository categoriaRepository;
+    // Repository usato al posto di DomandaServiceImpl: evita la dipendenza circolare
+    // CategoriaServiceImpl <-> DomandaServiceImpl (errore di avvio del contesto).
     @Autowired
-    private DomandaServiceImpl domandaServiceImpl;
+    private DomandaLavoroRepository domandaLavoroRepository;
 
     public Categoria findByNome(String nome) {
         return categoriaRepository.findByNomeIgnoreCase(nome);
     }
 
     public List<Categoria> findByDomanda(Long id) {
-        DomandaLavoro loadDomandaLavoroById = domandaServiceImpl.loadDomandaLavoroById(id);
+        DomandaLavoro loadDomandaLavoroById = domandaLavoroRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Domanda non trovata: " + id));
         return categoriaRepository.findByDomandeOrderByNomeAsc(loadDomandaLavoroById);
     }
 
@@ -41,7 +46,7 @@ public class CategoriaServiceImpl {
     }
 
     private Sort sortBy() {
-        return new Sort(Sort.Direction.ASC, "nome");
+        return Sort.by(Sort.Direction.ASC, "nome");
     }
 
     /*
