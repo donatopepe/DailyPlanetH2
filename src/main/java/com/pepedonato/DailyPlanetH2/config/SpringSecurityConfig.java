@@ -98,9 +98,8 @@ public class SpringSecurityConfig {
             String username = request.getParameter("username");
             loginRateLimitFilter.failed(request, username);
             if (loginRateLimitFilter.isBlocked(request, username)) {
-                response.setStatus(429);
                 response.setHeader("Retry-After", Long.toString(loginRateLimitFilter.retryAfterSeconds(request, username)));
-                request.getRequestDispatcher("/login?error=rate-limit").forward(request, response);
+                response.sendError(429, "Troppi tentativi di accesso. Attendere prima di riprovare.");
             } else {
                 response.sendRedirect(request.getContextPath() + "/login?error");
             }

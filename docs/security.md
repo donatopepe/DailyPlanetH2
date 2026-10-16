@@ -27,6 +27,8 @@ exploit in a public issue.
   obvious timing-based account enumeration.
 - Login rate limiting is per `(remote address, normalised username)` bucket: 8 failures in
   15 minutes causes a 15-minute cooldown, response `429 Too Many Requests` with `Retry-After`.
+  Live smoke verification confirmed attempts 1–7 redirect to login, attempt 8 returns 429
+  with `Retry-After: 900` (the integration test also verifies the next blocked request).
   Configure with `LOGIN_RATE_LIMIT_MAX_FAILURES`, `LOGIN_RATE_LIMIT_MAX_ENTRIES`,
   `LOGIN_RATE_LIMIT_WINDOW` (ISO-8601 duration) and `LOGIN_RATE_LIMIT_BLOCK_DURATION`.
   A successful login clears only that pair's bucket. The in-memory map has a maximum of
