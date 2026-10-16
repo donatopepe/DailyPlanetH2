@@ -105,7 +105,7 @@ completa, README, licenza MIT, test verdi).
 - **Blocker**: nessuno.
 
 ### S3.6 — Scrub dei segreti dalla storia git (dipende da S3) → C10 addendum — approvato dal proprietario
-- [ ] S3.6.1 Regole di sostituzione per la credenziale di default presente nei commit 2021 (`user.setPassword("REDACTED_default_credential")`).
+- [ ] S3.6.1 Regole di sostituzione per la credenziale di default presente nei commit 2021 (la riga di assegnazione della password di default negli script di seed (valore non riportato)).
 - [ ] S3.6.2 Riscrittura con `git filter-repo --replace-text` (tool disponibile in `/usr/local/bin/git-filter-repo`) su tutta la storia.
 - [ ] S3.6.3 Verifica: scansione di **tutti** i commit (`git rev-list --all` + grep di pattern di segreti) e conferma che la stringa non esiste più in nessun blob raggiungibile.
 - [ ] S3.6.4 Rimappatura degli hash citati in `TODO.md`/memoria e nota sul force-push richiesto in S9 (`--force-with-lease`, mai `--force`).
@@ -175,4 +175,4 @@ Viste/frammenti da creare (da `return "..."`
 - (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 13/13, test verdi, nessun segreto).
 
 ## Prossimo passo immediato
-S3.6.1 → S3.6.4 (scrub della storia: la credenziale di default `REDACTED_default_credential` introdotta nei commit del 2021 deve sparire da tutti i blob raggiungibili), poi S4 (viste Thymeleaf).
+S3.6.1 → S3.6.4 (scrub della storia: la coppia di credenziali di default introdotta nei commit del 2021 (valori non più riportati) deve sparire da tutti i blob raggiungibili), poi S4 (viste Thymeleaf).
