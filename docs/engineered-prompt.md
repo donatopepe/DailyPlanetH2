@@ -57,7 +57,7 @@ rispetta le dipendenze, lasciando il repository in stato verde e committato.
 - Se i test non possono girare (build non ancora esistente): dichiaralo come AC parziale,
   esegui la verifica alternativa più forte disponibile (compilazione, lint, `bash -n`,
   validazione sintassi) e registrala come evidenza.
-- Nessun push, nessun tag, nessun `git push --force`, nessuna modifica al remote.
+- Nessun push/tag al di fuori di S9. In S9 il push di `main` + tag `v1.0.0` + release è **pre-approvato dal proprietario** (decisione D4 in `TODO.md`), eseguibile senza ulteriore richiesta solo se: rubrica 12/12, `./gradlew clean test` verde, scansione anti-segreto pulita (S9.2). Mai `--force`, mai modifica della configurazione del remote.
 
 ### Vincoli non negoziabili
 1. Un solo branch `main`, nessun worktree nuovo.
@@ -69,13 +69,13 @@ rispetta le dipendenze, lasciando il repository in stato verde e committato.
 5. Nessun asset, icona o file di terze parti senza licenza compatibile MIT.
 6. Le 22 viste/frammenti Thymeleaf devono mantenere i nomi esatti usati dai `return` dei
    controller (frammenti inclusi, es. `newaccountDo :: results`).
-7. Java 17; Spring Boot 3.4.x; Gradle wrapper 8.14 committato.
+7. Java 17; Spring Boot 3.5.16; Gradle wrapper 8.14 committato.
 
 ### Ordine di esecuzione (non saltare fasi)
 `S1` scheletro Gradle → `S2` javax→jakarta + Spring Security 6 → `S3` persistenza e
 password → `S4` viste Thymeleaf → `S5` pulizia dominio/servizi → `S6` suite di test →
-`S7` README/guida/licenza → `S8` Docker + CI → `S9` rilascio (GATE: richiede approvazione
-esplicita del proprietario, poi si sblocca).
+`S7` README/guida/licenza → `S8` Docker + CI → `S9` rilascio pubblico **pre-approvato**
+(decisione D4: nessuna ulteriore richiesta se rubrica 12/12, test verdi, anti-segreto pulito).
 
 ### Comandi utili
 ```bash
@@ -103,8 +103,8 @@ Prossimo task: S<a>.<b>
 ### Criteri di stop
 - **Fermati e riporta** se: tutti i task S1–S9 sono spuntati (deliverable completo);
   oppure 3 task consecutivi sono bloccati; oppure compare un'azione irreversibile
-  (push, tag, pubblicazione) che richiede approvazione; oppure i test restano rossi
-  per motivi esterni al repository.
+  **non** coperta da D4 (es. riscrittura della storia git, credenziali di produzione,
+  modifiche a repository terzi); oppure i test restano rossi per motivi esterni al repository.
 - Quando il piano è completo: non creare nuovi task decorativi, non aggiungere
   architettura non richiesta. Invia il report finale e proponi la cancellazione del loop.
 

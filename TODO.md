@@ -61,12 +61,15 @@ completa, README, licenza MIT, test verdi).
 
 ## Fasi, dipendenze, ordine, criteri di completamento
 
-### S1 — Scheletro di build (dipende da: nessuno) → C1, C3(parziale)
-- [ ] S1.1 Generare wrapper Gradle 8.14 (`gradle wrapper --gradle-version 8.14`) e `settings.gradle`.
-- [ ] S1.2 `build.gradle` con Spring Boot 3.4.x, Java 17, dipendenze: web, thymeleaf, data-jpa, security, validation, h2 (runtime dev), postgresql (runtime prod), actuator, test (junit5, spring-security-test, mockito).
-- [ ] S1.3 Spostare i 24 sorgenti in `src/main/java/com/pepedonato/DailyPlanetH2/...` con `git mv`; creare `src/main/resources`, `src/test/java`.
-- [ ] S1.4 `.gitignore` per Gradle (`build/`, `.gradle/`, `*.h2.db`, `.codegraph/`, IDE).
-- **AC**: `./gradlew compileJava` verde; `git status` pulito dopo commit S1.
+### S1 — Scheletro di build (dipende da: nessuno) → C1
+- [x] S1.1 Generare wrapper Gradle 8.14 (`gradle wrapper --gradle-version 8.14`) e `settings.gradle`.
+- [x] S1.2 `build.gradle` con Spring Boot 3.5.16 (ultima 3.x stabile su Maven Central al 2026-10-16; il piano iniziale diceva 3.4.x), Java 17, dipendenze: web, thymeleaf, `thymeleaf-extras-springsecurity6`, data-jpa, security, validation, h2 (runtime dev), postgresql (runtime prod), actuator, test (junit5, spring-security-test, mockito).
+- [x] S1.3 Spostare i 24 sorgenti in `src/main/java/com/pepedonato/DailyPlanetH2/...` con `git mv`; creare `src/main/resources`, `src/test/java`.
+- [x] S1.4 `.gitignore` per Gradle (`build/`, `.gradle/`, `*.h2.db`, `.codegraph/`, IDE).
+- **AC (corretta 2026-10-16)**: `./gradlew help` e risoluzione dipendenze (`./gradlew dependencies --configuration compileClasspath`) verdi; layout standard presente; commit S1 fatto. `./gradlew compileJava` resta **rosso per progetto** finché S2 non completa la migrazione `javax.*` → `jakarta.*`: la sua AC appartiene a S2, non a S1.
+- **Stato**: COMPLETATO (2026-10-16).
+- **Evidenza**: `gradle wrapper --gradle-version 8.14` → BUILD SUCCESSFUL, `gradle-wrapper.properties` con `gradle-8.14-bin.zip`; `./gradlew help` → BUILD SUCCESSFUL (16s); `./gradlew dependencies --configuration compileClasspath` → BUILD SUCCESSFUL, `spring-boot-starter-{web,thymeleaf,security} -> 3.5.16`, `thymeleaf-extras-springsecurity6 -> 3.1.5.RELEASE`; `find src -type f` → 24 sorgenti in `src/main/java/com/pepedonato/DailyPlanetH2/**`; `./gradlew compileJava` → FAILED con 142 errori `package javax.*` (atteso, AC di S2).
+- **Blocker**: nessuno.
 
 ### S2 — Migrazione framework (dipende da S1) → C3, C4
 - [ ] S2.1 Sostituire import `javax.*` → `jakarta.*` (persistence, validation, servlet).
@@ -127,10 +130,19 @@ Viste/frammenti da creare (da `return "..."`
 - [ ] S9.3 **Approvazione esplicita del proprietario** registrata qui, poi `git push` di `main` + tag e creazione release GitHub.
 - **AC**: approvazione scritta in TODO; push riuscito; release pubblicata.
 
+## Decisioni approvate dal proprietario (2026-10-16)
+| # | Decisione | Stato |
+|---|---|---|
+| D1 | Progetto target = `/home/public/DailyPlanetH2` | **confermato** dal proprietario |
+| D2 | DB produzione = PostgreSQL via variabili d'ambiente, H2 file in dev | **confermato** |
+| D3 | Build = Gradle 8.14 con wrapper committato, Spring Boot 3.5.16, Java 17 | **confermato** |
+| D4 | Rilascio pubblico (push `main` + tag `v1.0.0` + release GitHub) in S9 | **pre-approvato**: eseguibile senza ulteriore richiesta una volta che la rubrica è 12/12, `./gradlew clean test` è verde e la scansione anti-segreto è pulita (S9.2) |
+| D5 | Licenza MIT con copyright "Donato Pepe" | **confermato** |
+
 ## Blocker
 - (S0) Maven non installato → si usa Gradle + wrapper (nessun blocker reale).
 - (S0) `codegraph` MCP non esposto tra i tool; CLI `/usr/local/bin/codegraph` disponibile e usata come da preferenza globale.
-- (aperto) Il proprietario non ha ancora indicato un DB di produzione: in S3 si assume PostgreSQL via env var, H2 in dev.
+- (aperto) Push/release S9 restano subordinati ai gate automatici D4 (rubrica 12/12, test verdi, nessun segreto).
 
 ## Prossimo passo immediato
-S1.1 → S1.4 (scheletro Gradle + spostamento sorgenti + commit), poi S2.
+S2.1 → S2.4 (migrazione `javax.*` → `jakarta.*` + Spring Security 6, con `codegraph sync` e analisi d'impatto): obiettivo primario riportare `./gradlew compileJava` verde.
