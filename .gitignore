@@ -1,3 +1,20 @@
+# Build Gradle
+build/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Database locale H2
+*.h2.db
+*.mv.db
+*.trace.db
+
+# CodeGraph (indice locale)
+.codegraph/
+
+# Loop agent locale
+.pi-loop.json
+.pi-loop.json.lock
+
 # Compiled class file
 *.class
 
