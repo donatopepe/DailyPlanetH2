@@ -1,7 +1,6 @@
 # Build Gradle
 build/
 .gradle/
-!gradle/wrapper/gradle-wrapper.jar
 
 # Database locale H2
 *.h2.db
@@ -41,3 +40,7 @@ hs_err_pid*
 
 # Variabili d'ambiente locali (mai committare credenziali)
 .env
+
+# Il wrapper Gradle DEVE essere versionato (build riproducibile da un clone pulito).
+# Attenzione: l'eccezione va DOPO la regola *.jar, altrimenti quest'ultima la annulla.
+!gradle/wrapper/gradle-wrapper.jar

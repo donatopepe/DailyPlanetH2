@@ -24,6 +24,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Guardia di regressione: senza il wrapper versionato un clone pulito non compila
+      # (l'errore reale era "Unable to access jarfile gradle/wrapper/gradle-wrapper.jar"
+      # causato da una regola *.jar che annullava l'eccezione nel .gitignore).
+      - name: Il wrapper Gradle è versionato
+        shell: bash
+        run: test -f gradle/wrapper/gradle-wrapper.jar
+
       - name: JDK 17
         uses: actions/setup-java@v4
         with:
